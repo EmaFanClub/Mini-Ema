@@ -5,7 +5,7 @@ A simple chatbot UI built with Gradio.
 ## Installation
 
 ```bash
-pip install -e .
+uv sync
 ```
 
 ## Usage
@@ -13,7 +13,7 @@ pip install -e .
 Launch the chatbot UI:
 
 ```bash
-python -m mini_ema
+uv run python -m mini_ema
 ```
 
 The application will start a web server and open the chat interface in your browser.
