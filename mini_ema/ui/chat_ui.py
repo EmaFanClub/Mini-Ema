@@ -128,10 +128,7 @@ class ChatUI:
             chatbot = gr.Chatbot(
                 value=[],
                 height=600,
-                avatar_images=(
-                    USER_AVATAR,  # User avatar from dicebear initials
-                    EMA_AVATAR,  # Ema avatar from dicebear initials
-                ),
+                avatar_images=(USER_AVATAR, EMA_AVATAR),
                 show_label=False,
             )
 
