@@ -45,7 +45,8 @@ mini_ema/
 │   ├── __init__.py      # Bot module exports
 │   ├── base.py          # BaseBot abstract interface
 │   ├── simple_bot.py    # SimpleBot implementation (hardcoded responses)
-│   └── gemini_bot.py    # GeminiBot implementation (Google Gemini API)
+│   ├── bare_gemini_bot.py  # BareGeminiBot implementation (Google Gemini API)
+│   └── pretty_gemini_bot.py  # PrettyGeminiBot implementation (Structured outputs)
 └── ui/                  # UI module - Gradio interface components
     ├── __init__.py      # UI module exports
     └── chat_ui.py       # ChatUI class and interface logic
@@ -57,6 +58,7 @@ mini_ema/
 - User messages on the right, AI responses on the left
 - Avatar images for User and Ema
 - **Bot selector dropdown** to switch between different AI bots
+- **User name input** to personalize interactions (default: "Phoenix")
 - AI responses show metadata including:
   - Response title with emoji
   - Finish reason
@@ -70,9 +72,22 @@ mini_ema/
 ### Simple Bot
 A demo bot with hardcoded responses for testing the UI.
 
-### Gemini LLM
+### Bare Gemini Bot
 AI-powered bot using Google's Gemini API with the `gemini-3-flash-preview` model. Features:
 - Real-time AI responses
 - Detailed usage metadata
 - Environment-based configuration
 - Error handling for API issues
+
+### Pretty Gemini Bot
+Advanced AI-powered bot using Gemini's Structured Outputs capability. Features:
+- Character personality: Kristina, an 18-year-old genius scientist with a tsundere personality
+- Research focus: AI and large language models
+- Structured output format with:
+  - Internal thoughts (think)
+  - Facial expressions (neutral, smile, serious, confused, surprised, sad)
+  - Physical actions (none, nod, shake, wave, jump, point)
+  - Spoken words (speak)
+- Multi-language support (responds in the same language as user input)
+- User name addressing via XML tags
+- Emoji-based expression indicators in chat bubbles

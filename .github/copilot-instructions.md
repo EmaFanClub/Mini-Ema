@@ -714,6 +714,27 @@ ai.google.dev/gemini-api/docs.
 
 ## Mini Ema Python API
 
+### Bot Interface
+
+All bots must inherit from `BaseBot` and implement the `get_response` method with the following signature:
+
+```python
+def get_response(self, message: str, username: str = "Phoenix") -> Iterable[dict]:
+    """Generate a response to a user message.
+    
+    Args:
+        message: The user's message
+        username: The name of the user (default: "Phoenix")
+    
+    Yields:
+        Message dictionaries with role, content, and optional metadata.
+        Each dictionary should have:
+            - role: "assistant"
+            - content: The message text
+            - metadata: Optional dict with title and other metadata
+    """
+```
+
 ### Bot Metadata Structure
 
 When implementing bots that inherit from `BaseBot`, the `get_response()` method should yield dictionaries with the following structure:

@@ -16,11 +16,12 @@ class SimpleBot(BaseBot):
         """Clear conversation history (no-op for SimpleBot)."""
         pass
 
-    def get_response(self, message: str) -> Iterable[dict]:
+    def get_response(self, message: str, username: str = "Phoenix") -> Iterable[dict]:
         """Get hardcoded AI response as structured messages.
 
         Args:
             message: User message (unused in hardcoded version)
+            username: The name of the user (unused in hardcoded version)
 
         Yields:
             Message dictionaries with role, content, and optional metadata

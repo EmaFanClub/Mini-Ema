@@ -60,11 +60,12 @@ class BareGeminiBot(BaseBot):
             ),
         )
 
-    def get_response(self, message: str) -> Iterable[dict]:
+    def get_response(self, message: str, username: str = "Phoenix") -> Iterable[dict]:
         """Generate a response using Gemini API with conversation history.
 
         Args:
             message: The user's message
+            username: The name of the user (unused, parameter ignored)
 
         Yields:
             Message dictionaries with role, content, and metadata.
@@ -74,7 +75,7 @@ class BareGeminiBot(BaseBot):
                 - metadata: Dict with title and log (plain text formatted usage info)
         """
         try:
-            # Send message to chat and get response
+            # Send message to chat and get response (username parameter is ignored)
             response = self.chat.send_message(message)
 
             # Extract response data using direct API access

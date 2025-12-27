@@ -20,11 +20,12 @@ class BaseBot(ABC):
         pass
 
     @abstractmethod
-    def get_response(self, message: str) -> Iterable[dict]:
+    def get_response(self, message: str, username: str = "Phoenix") -> Iterable[dict]:
         """Generate a response to a user message.
 
         Args:
             message: The user's message
+            username: The name of the user (default: "Phoenix")
 
         Yields:
             Message dictionaries with role, content, and optional metadata.

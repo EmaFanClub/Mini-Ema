@@ -1,5 +1,6 @@
 """Chat UI components for Mini Ema."""
 
+import os
 import time
 
 import gradio as gr
@@ -10,9 +11,11 @@ from ..bot.base import BaseBot
 # Streaming configuration
 STREAMING_DELAY = 0.02  # Delay between characters in seconds
 
-# Avatar images - using dicebear API for initials
-USER_AVATAR = "https://api.dicebear.com/9.x/initials/svg?seed=User"
-EMA_AVATAR = "https://api.dicebear.com/9.x/initials/svg?seed=Ema"
+# Avatar images - configurable via environment variables
+USER_AVATAR = os.getenv(
+    "USER_AVATAR", "https://github.com/user-attachments/assets/f162af9b-1f89-451d-a9ea-114694b9b8fe"
+)
+EMA_AVATAR = os.getenv("EMA_AVATAR", "https://github.com/user-attachments/assets/3f3420e7-094a-4a50-b947-1d1f56127c60")
 
 
 class ChatUI:
@@ -44,12 +47,13 @@ class ChatUI:
         """
         return "", history + [{"role": "user", "content": user_message}]
 
-    def _bot_response(self, history: list, selected_bot: str):
+    def _bot_response(self, history: list, selected_bot: str, username: str):
         """Generate AI response with streaming.
 
         Args:
             history: Chat history
             selected_bot: Name of the selected bot
+            username: The name of the user
 
         Yields:
             Updated history with streaming AI response
@@ -76,7 +80,7 @@ class ChatUI:
             else:
                 user_msg = str(content)
 
-        ai_messages = current_bot.get_response(user_msg)
+        ai_messages = current_bot.get_response(user_msg, username)
 
         # Stream each message as a separate bubble
         for msg in ai_messages:
@@ -113,13 +117,18 @@ class ChatUI:
                 interactive=True,
             )
 
+            # User name input
+            username_input = gr.Textbox(
+                value="Phoenix",
+                label="👤 User Name",
+                placeholder="Enter user name...",
+                interactive=True,
+            )
+
             chatbot = gr.Chatbot(
                 value=[],
                 height=600,
-                avatar_images=(
-                    USER_AVATAR,  # User avatar from dicebear initials
-                    EMA_AVATAR,  # Ema avatar from dicebear initials
-                ),
+                avatar_images=(USER_AVATAR, EMA_AVATAR),
                 show_label=False,
             )
 
@@ -144,11 +153,11 @@ class ChatUI:
 
             # Handle message sending with streaming
             msg_input.submit(self._user_message, [msg_input, chatbot], [msg_input, chatbot], queue=False).then(
-                self._bot_response, [chatbot, bot_selector], chatbot
+                self._bot_response, [chatbot, bot_selector, username_input], chatbot
             )
 
             send_btn.click(self._user_message, [msg_input, chatbot], [msg_input, chatbot], queue=False).then(
-                self._bot_response, [chatbot, bot_selector], chatbot
+                self._bot_response, [chatbot, bot_selector, username_input], chatbot
             )
 
             clear.click(clear_chat, bot_selector, chatbot, queue=False)
