@@ -1,16 +1,16 @@
 .PHONY: style
 style:
 	@echo "Running Ruff format check..."
-	uv run --no-project ruff format --check .
+	uvx ruff format --check .
 	@echo "Running Ruff linter..."
-	uv run --no-project ruff check .
+	uvx ruff check .
 
 .PHONY: format
 format:
 	@echo "Running Ruff format..."
-	uv run --no-project ruff format .
+	uvx ruff format .
 	@echo "Running Ruff fix..."
-	uv run --no-project ruff check --fix .
+	uvx ruff check --fix .
 
 .PHONY: build
 build:

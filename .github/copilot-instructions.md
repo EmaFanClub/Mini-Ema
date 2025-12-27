@@ -655,7 +655,14 @@ This project uses Ruff for code formatting and linting, following Google Python 
 
 ### Using uv for Dependency Management
 
-This project uses `uv` for managing dependencies and running tools. Make sure you have `uv` installed.
+This project uses `uv` for managing dependencies and running tools.
+
+**Documentation**: [docs.astral.sh/uv/](https://docs.astral.sh/uv/)
+
+**Installation**:
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
 
 ### Using Make Commands
 
@@ -676,7 +683,7 @@ The project is configured in `pyproject.toml` with:
 
 ### Testing
 
-When testing code changes, use `uv` to run commands:
-- `uv run ruff check .` - Run linting
-- `uv run ruff format .` - Format code
+When testing code changes, use `uvx` to run commands:
+- `uvx ruff check .` - Run linting
+- `uvx ruff format .` - Format code
 - `uv run python <script>.py` - Run Python scripts
