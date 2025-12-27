@@ -22,22 +22,14 @@ class ChatUI:
     for creating and launching the chat application.
     """
 
-    def __init__(self, bots: dict[str, BaseBot] | BaseBot, streaming_delay: float = STREAMING_DELAY):
+    def __init__(self, bots: dict[str, BaseBot], streaming_delay: float = STREAMING_DELAY):
         """Initialize the chat UI.
 
         Args:
-            bots: Either a single bot instance or a dictionary of bot name -> bot instance
+            bots: Dictionary of bot name -> bot instance
             streaming_delay: Delay between characters when streaming (seconds)
         """
-        # Support both single bot and multiple bots
-        if isinstance(bots, dict):
-            self.bots = bots
-            self.bot = next(iter(bots.values()))  # Default to first bot
-            self.multi_bot = True
-        else:
-            self.bots = {"Default": bots}
-            self.bot = bots
-            self.multi_bot = False
+        self.bots = bots
         self.streaming_delay = streaming_delay
 
     def _user_message(self, user_message: str, history: list):
@@ -52,21 +44,18 @@ class ChatUI:
         """
         return "", history + [{"role": "user", "content": user_message}]
 
-    def _bot_response(self, history: list, selected_bot: str | None = None):
+    def _bot_response(self, history: list, selected_bot: str):
         """Generate AI response with streaming.
 
         Args:
             history: Chat history
-            selected_bot: Name of the selected bot (for multi-bot mode)
+            selected_bot: Name of the selected bot
 
         Yields:
             Updated history with streaming AI response
         """
-        # Get the correct bot instance
-        if self.multi_bot and selected_bot:
-            current_bot = self.bots.get(selected_bot, self.bot)
-        else:
-            current_bot = self.bot
+        # Get the selected bot instance
+        current_bot = self.bots.get(selected_bot, next(iter(self.bots.values())))
 
         # Get the AI response as an iterable of structured messages
         user_msg = history[-1]["content"] if history else ""
@@ -99,16 +88,13 @@ class ChatUI:
         with gr.Blocks() as demo:
             gr.Markdown("# 💬 Mini Ema Chat")
 
-            # Bot selector (only show if multiple bots available)
-            if self.multi_bot:
-                bot_selector = gr.Dropdown(
-                    choices=list(self.bots.keys()),
-                    value=list(self.bots.keys())[0],
-                    label="🤖 Select Bot",
-                    interactive=True,
-                )
-            else:
-                bot_selector = gr.Textbox(visible=False)  # Hidden dummy component
+            # Bot selector
+            bot_selector = gr.Dropdown(
+                choices=list(self.bots.keys()),
+                value=list(self.bots.keys())[0],
+                label="🤖 Select Bot",
+                interactive=True,
+            )
 
             chatbot = gr.Chatbot(
                 value=[],
@@ -131,6 +117,14 @@ class ChatUI:
 
             clear = gr.Button("Clear")
 
+            def clear_chat(selected_bot):
+                """Clear chat history and reset bot."""
+                # Call clear method on the selected bot if it exists
+                bot = self.bots.get(selected_bot)
+                if bot and hasattr(bot, "clear"):
+                    bot.clear()
+                return []
+
             # Handle message sending with streaming
             msg_input.submit(self._user_message, [msg_input, chatbot], [msg_input, chatbot], queue=False).then(
                 self._bot_response, [chatbot, bot_selector], chatbot
@@ -140,7 +134,7 @@ class ChatUI:
                 self._bot_response, [chatbot, bot_selector], chatbot
             )
 
-            clear.click(lambda: None, None, chatbot, queue=False)
+            clear.click(clear_chat, bot_selector, chatbot, queue=False)
 
         return demo
 

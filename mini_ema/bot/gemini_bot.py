@@ -3,22 +3,17 @@
 import os
 from collections.abc import Iterable
 
-from dotenv import load_dotenv
 from google import genai
 from google.genai.errors import APIError
 
 from .base import BaseBot
 
 
-# Load environment variables from .env file
-load_dotenv()
-
-
-class GeminiBot(BaseBot):
+class BareGeminiBot(BaseBot):
     """A bot that uses Google's Gemini API to generate responses.
 
     This bot integrates with the official Google GenAI SDK to provide
-    AI-powered responses using the Gemini 3 Flash model.
+    AI-powered responses using the Gemini 3 Flash model with conversation history.
     """
 
     def __init__(self, api_key: str | None = None, model: str | None = None):
@@ -41,8 +36,15 @@ class GeminiBot(BaseBot):
         # Initialize the Gemini client
         self.client = genai.Client(api_key=self.api_key)
 
+        # Initialize chat session
+        self.chat = self.client.chats.create(model=self.model)
+
+    def clear(self):
+        """Clear conversation history by creating a new chat session."""
+        self.chat = self.client.chats.create(model=self.model)
+
     def get_response(self, message: str) -> Iterable[dict]:
-        """Generate a response using Gemini API.
+        """Generate a response using Gemini API with conversation history.
 
         Args:
             message: The user's message
@@ -55,49 +57,26 @@ class GeminiBot(BaseBot):
                 - metadata: Dict with title and log (HTML formatted usage info)
         """
         try:
-            # Call Gemini API
-            response = self.client.models.generate_content(
-                model=self.model,
-                contents=message,
-            )
+            # Send message to chat and get response
+            response = self.chat.send_message(message)
 
-            # Extract response data
-            if response.candidates and len(response.candidates) > 0:
-                candidate = response.candidates[0]
-                content = candidate.content
+            # Extract response data using direct API access
+            finish_reason = response.candidates[0].finish_reason.value
+            text = response.text
+            model_version = response.model_version
 
-                # Extract text from all parts
-                full_text = ""
-                for part in content.parts:
-                    if part.text:
-                        full_text += part.text
+            # Format usage metadata as HTML
+            log_html = self._format_usage_log(finish_reason, response.usage_metadata, model_version)
 
-                # Get metadata
-                finish_reason = getattr(candidate, "finish_reason", "UNKNOWN")
-                usage_metadata = getattr(response, "usage_metadata", None)
-                model_version = getattr(response, "model_version", self.model)
-
-                # Format usage metadata as HTML
-                log_html = self._format_usage_log(finish_reason, usage_metadata, model_version)
-
-                # Yield the response with metadata
-                yield {
-                    "role": "assistant",
-                    "content": full_text,
-                    "metadata": {
-                        "title": "💡 Answer",
-                        "log": log_html,
-                    },
-                }
-            else:
-                # No candidates returned
-                yield {
-                    "role": "assistant",
-                    "content": "I apologize, but I couldn't generate a response. Please try again.",
-                    "metadata": {
-                        "title": "⚠️ Error",
-                    },
-                }
+            # Yield the response with metadata
+            yield {
+                "role": "assistant",
+                "content": text,
+                "metadata": {
+                    "title": "💡 Answer",
+                    "log": log_html,
+                },
+            }
 
         except APIError as e:
             # Handle API errors
@@ -142,22 +121,13 @@ class GeminiBot(BaseBot):
             html_parts.append("<strong>Token Usage:</strong>")
             html_parts.append("<ul style='margin: 5px 0; padding-left: 20px;'>")
 
-            prompt_tokens = getattr(usage_metadata, "prompt_token_count", None)
-            if prompt_tokens is not None:
-                html_parts.append(f"<li>Prompt: {prompt_tokens}</li>")
+            html_parts.append(f"<li>Prompt: {usage_metadata.prompt_token_count}</li>")
+            html_parts.append(f"<li>Response: {usage_metadata.candidates_token_count}</li>")
 
-            response_tokens = getattr(usage_metadata, "candidates_token_count", None)
-            if response_tokens is not None:
-                html_parts.append(f"<li>Response: {response_tokens}</li>")
+            if usage_metadata.thoughts_token_count:
+                html_parts.append(f"<li>Thinking: {usage_metadata.thoughts_token_count}</li>")
 
-            thinking_tokens = getattr(usage_metadata, "thoughts_token_count", None)
-            if thinking_tokens:
-                html_parts.append(f"<li>Thinking: {thinking_tokens}</li>")
-
-            total_tokens = getattr(usage_metadata, "total_token_count", None)
-            if total_tokens is not None:
-                html_parts.append(f"<li><strong>Total: {total_tokens}</strong></li>")
-
+            html_parts.append(f"<li><strong>Total: {usage_metadata.total_token_count}</strong></li>")
             html_parts.append("</ul>")
 
         return "<br>".join(html_parts)
