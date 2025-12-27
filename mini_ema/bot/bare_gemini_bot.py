@@ -41,7 +41,7 @@ class BareGeminiBot(BaseBot):
         self.chat = self.client.chats.create(
             model=self.model,
             config=types.GenerateContentConfig(
-                thinking_config=types.ThinkingConfig(thinking_level=types.ThinkingLevel.MEDIUM)
+                thinking_config=types.ThinkingConfig(thinking_level=types.ThinkingLevel.MINIMAL)
             ),
         )
 
@@ -50,7 +50,7 @@ class BareGeminiBot(BaseBot):
         self.chat = self.client.chats.create(
             model=self.model,
             config=types.GenerateContentConfig(
-                thinking_config=types.ThinkingConfig(thinking_level=types.ThinkingLevel.MEDIUM)
+                thinking_config=types.ThinkingConfig(thinking_level=types.ThinkingLevel.MINIMAL)
             ),
         )
 
@@ -109,7 +109,7 @@ class BareGeminiBot(BaseBot):
             }
 
     def _format_usage_log(self, finish_reason: str, usage_metadata, model_version: str) -> str:
-        """Format usage metadata as HTML.
+        """Format usage metadata as plain text.
 
         Args:
             finish_reason: The reason the model stopped generating
@@ -117,28 +117,26 @@ class BareGeminiBot(BaseBot):
             model_version: The model version used
 
         Returns:
-            HTML formatted string with usage information
+            Plain text string with usage information in compact format
         """
-        html_parts = []
+        parts = []
 
-        # Add finish reason
-        html_parts.append(f"<strong>Finish Reason:</strong> {finish_reason}")
+        # Add finish reason (shortened)
+        parts.append(f"Stop: {finish_reason}")
 
-        # Add model version
-        html_parts.append(f"<strong>Model:</strong> {model_version}")
+        # Add model version (shortened)
+        parts.append(f"Model: {model_version}")
 
-        # Add token usage if available
+        # Add token usage if available (using short labels)
         if usage_metadata:
-            html_parts.append("<strong>Token Usage:</strong>")
-            html_parts.append("<ul style='margin: 5px 0; padding-left: 20px;'>")
-
-            html_parts.append(f"<li>Prompt: {usage_metadata.prompt_token_count}</li>")
-            html_parts.append(f"<li>Response: {usage_metadata.candidates_token_count}</li>")
+            token_parts = []
+            token_parts.append(f"P:{usage_metadata.prompt_token_count}")
+            token_parts.append(f"R:{usage_metadata.candidates_token_count}")
 
             if usage_metadata.thoughts_token_count:
-                html_parts.append(f"<li>Thinking: {usage_metadata.thoughts_token_count}</li>")
+                token_parts.append(f"T:{usage_metadata.thoughts_token_count}")
 
-            html_parts.append(f"<li><strong>Total: {usage_metadata.total_token_count}</strong></li>")
-            html_parts.append("</ul>")
+            token_parts.append(f"Tot:{usage_metadata.total_token_count}")
+            parts.append(f"Tokens: {' | '.join(token_parts)}")
 
-        return "<br>".join(html_parts)
+        return " | ".join(parts)

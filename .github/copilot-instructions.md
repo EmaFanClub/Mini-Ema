@@ -276,7 +276,7 @@ for part in response.candidates[0].content.parts:
         print(f"Response: {part.text}")
 ```
 
-NOTE: If using `gemini-3-flash-preview`, always use `types.ThinkingLevel.MEDIUM` to balance latency and reasoning depth.
+NOTE: If using `gemini-3-flash-preview`, always use `types.ThinkingLevel.MINIMAL` to balance latency and reasoning depth.
 
 ##### Gemini 2.5
 
