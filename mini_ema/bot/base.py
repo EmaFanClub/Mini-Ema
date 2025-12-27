@@ -19,8 +19,8 @@ class BaseBot(ABC):
             message: The user's message
             history: Optional chat history for context
 
-        Returns:
-            Iterable of message dictionaries with role, content, and optional metadata.
+        Yields:
+            Message dictionaries with role, content, and optional metadata.
             Each dictionary should have:
                 - role: "assistant"
                 - content: The message text
