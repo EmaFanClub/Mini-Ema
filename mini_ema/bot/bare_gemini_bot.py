@@ -65,7 +65,7 @@ class BareGeminiBot(BaseBot):
             Each dictionary has:
                 - role: "assistant"
                 - content: The message text
-                - metadata: Dict with title and log (HTML formatted usage info)
+                - metadata: Dict with title and log (plain text formatted usage info)
         """
         try:
             # Send message to chat and get response
@@ -76,8 +76,8 @@ class BareGeminiBot(BaseBot):
             text = response.text
             model_version = response.model_version
 
-            # Format usage metadata as HTML
-            log_html = self._format_usage_log(finish_reason, response.usage_metadata, model_version)
+            # Format usage metadata as plain text
+            log_text = self._format_usage_log(finish_reason, response.usage_metadata, model_version)
 
             # Yield the response with metadata
             yield {
@@ -85,7 +85,7 @@ class BareGeminiBot(BaseBot):
                 "content": text,
                 "metadata": {
                     "title": "💡 Answer",
-                    "log": log_html,
+                    "log": log_text,
                 },
             }
 
