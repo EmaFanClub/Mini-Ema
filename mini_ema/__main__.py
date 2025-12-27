@@ -5,6 +5,13 @@ import time
 import gradio as gr
 from gradio import ChatMessage
 
+# Streaming configuration
+STREAMING_DELAY = 0.02  # Delay between characters in seconds
+
+# Styling constants
+THINKING_STYLE = 'color: #6B7280; font-style: italic; margin-bottom: 8px;'
+ANSWER_STYLE = 'color: #1F2937;'
+
 
 def parse_ai_responses(response: str) -> list[tuple[str, str]]:
     """Parse AI response into multiple message parts.
@@ -20,13 +27,19 @@ def parse_ai_responses(response: str) -> list[tuple[str, str]]:
     # Find all think/answer pairs using regex
     messages = []
     
-    # Pattern to match think/answer pairs
-    pattern = r'(?:<think>(.*?)</think>)?(?:<answer>(.*?)</answer>)?'
+    # Pattern to match think/answer pairs - at least one tag must be present
+    pattern = r'<think>(.*?)</think>(?:<answer>(.*?)</answer>)?|<answer>(.*?)</answer>'
     matches = re.finditer(pattern, response, re.DOTALL)
     
     for match in matches:
-        thinking = match.group(1).strip() if match.group(1) else ""
-        answer = match.group(2).strip() if match.group(2) else ""
+        # Handle <think>...</think><answer>...</answer> pattern
+        if match.group(1) is not None:
+            thinking = match.group(1).strip()
+            answer = match.group(2).strip() if match.group(2) else ""
+        # Handle standalone <answer>...</answer> pattern
+        else:
+            thinking = ""
+            answer = match.group(3).strip() if match.group(3) else ""
         
         if thinking or answer:
             messages.append((thinking, answer))
@@ -76,17 +89,14 @@ def bot(history: list):
     
     # Stream each message
     for thinking, answer in messages:
-        # Format the message with colored parts
-        formatted_response = ""
-        
         # Add thinking part with streaming
         if thinking:
             history.append({"role": "assistant", "content": ""})
-            thinking_prefix = '<div style="color: #6B7280; font-style: italic; margin-bottom: 8px;">💭 '
+            thinking_prefix = f'<div style="{THINKING_STYLE}">💭 '
             history[-1]["content"] = thinking_prefix
             for char in thinking:
                 history[-1]["content"] += char
-                time.sleep(0.02)
+                time.sleep(STREAMING_DELAY)
                 yield history
             history[-1]["content"] += '</div>'
             yield history
@@ -96,7 +106,7 @@ def bot(history: list):
             if not thinking:
                 history.append({"role": "assistant", "content": ""})
             
-            answer_prefix = '<div style="color: #1F2937;">'
+            answer_prefix = f'<div style="{ANSWER_STYLE}">'
             if thinking:
                 history[-1]["content"] += answer_prefix
             else:
@@ -104,7 +114,7 @@ def bot(history: list):
                 
             for char in answer:
                 history[-1]["content"] += char
-                time.sleep(0.02)
+                time.sleep(STREAMING_DELAY)
                 yield history
             history[-1]["content"] += '</div>'
             yield history
