@@ -1,26 +1,37 @@
 """Main entry point for Mini Ema chatbot."""
 
 import re
+import time
 import gradio as gr
 from gradio import ChatMessage
 
 
-def parse_ai_response(response: str) -> tuple[str, str]:
-    """Parse AI response into thinking and answer parts.
+def parse_ai_responses(response: str) -> list[tuple[str, str]]:
+    """Parse AI response into multiple message parts.
+    
+    Each response can have multiple <think>/<answer> pairs, creating separate bubbles.
     
     Args:
         response: AI response string with <think> and <answer> tags
         
     Returns:
-        Tuple of (thinking, answer) strings
+        List of (thinking, answer) tuples for each message bubble
     """
-    think_match = re.search(r'<think>(.*?)</think>', response, re.DOTALL)
-    answer_match = re.search(r'<answer>(.*?)</answer>', response, re.DOTALL)
+    # Find all think/answer pairs using regex
+    messages = []
     
-    thinking = think_match.group(1).strip() if think_match else ""
-    answer = answer_match.group(1).strip() if answer_match else ""
+    # Pattern to match think/answer pairs
+    pattern = r'(?:<think>(.*?)</think>)?(?:<answer>(.*?)</answer>)?'
+    matches = re.finditer(pattern, response, re.DOTALL)
     
-    return thinking, answer
+    for match in matches:
+        thinking = match.group(1).strip() if match.group(1) else ""
+        answer = match.group(2).strip() if match.group(2) else ""
+        
+        if thinking or answer:
+            messages.append((thinking, answer))
+    
+    return messages if messages else [("", "")]
 
 
 def get_ai_response(message: str) -> str:
@@ -30,42 +41,73 @@ def get_ai_response(message: str) -> str:
         message: User message (unused in hardcoded version)
         
     Returns:
-        Hardcoded AI response
+        Hardcoded AI response (can contain multiple messages)
     """
     return "<think>我是Ema</think><answer>你好，我是Ema。</answer>"
 
 
-def chat(message: str, history: list) -> tuple[str, list]:
-    """Process chat message and update history.
+def user(user_message: str, history: list):
+    """Add user message to history.
     
     Args:
-        message: User's message
-        history: Chat history in ChatMessage format
+        user_message: User's message
+        history: Chat history
         
     Returns:
         Tuple of (empty string, updated history)
     """
-    if not message.strip():
-        return "", history
+    return "", history + [{"role": "user", "content": user_message}]
+
+
+def bot(history: list):
+    """Generate AI response with streaming.
     
-    # Add user message
-    history.append(ChatMessage(role="user", content=message))
+    Args:
+        history: Chat history
+        
+    Yields:
+        Updated history with streaming AI response
+    """
+    # Get the AI response
+    ai_response = get_ai_response(history[-1]["content"] if history else "")
     
-    # Get AI response
-    ai_response = get_ai_response(message)
-    thinking, answer = parse_ai_response(ai_response)
+    # Parse into multiple messages
+    messages = parse_ai_responses(ai_response)
     
-    # Format AI response with colored parts
-    formatted_response = ""
-    if thinking:
-        formatted_response += f'<div style="color: #6B7280; font-style: italic; margin-bottom: 8px;">💭 {thinking}</div>'
-    if answer:
-        formatted_response += f'<div style="color: #1F2937;">{answer}</div>'
-    
-    # Add AI response
-    history.append(ChatMessage(role="assistant", content=formatted_response))
-    
-    return "", history
+    # Stream each message
+    for thinking, answer in messages:
+        # Format the message with colored parts
+        formatted_response = ""
+        
+        # Add thinking part with streaming
+        if thinking:
+            history.append({"role": "assistant", "content": ""})
+            thinking_prefix = '<div style="color: #6B7280; font-style: italic; margin-bottom: 8px;">💭 '
+            history[-1]["content"] = thinking_prefix
+            for char in thinking:
+                history[-1]["content"] += char
+                time.sleep(0.02)
+                yield history
+            history[-1]["content"] += '</div>'
+            yield history
+        
+        # Add answer part with streaming
+        if answer:
+            if not thinking:
+                history.append({"role": "assistant", "content": ""})
+            
+            answer_prefix = '<div style="color: #1F2937;">'
+            if thinking:
+                history[-1]["content"] += answer_prefix
+            else:
+                history[-1]["content"] = answer_prefix
+                
+            for char in answer:
+                history[-1]["content"] += char
+                time.sleep(0.02)
+                yield history
+            history[-1]["content"] += '</div>'
+            yield history
 
 
 def create_ui():
@@ -73,14 +115,12 @@ def create_ui():
     with gr.Blocks() as demo:
         gr.Markdown("# 💬 Mini Ema Chat")
         
-        state = gr.State([])
-        
         chatbot = gr.Chatbot(
             value=[],
             height=600,
             avatar_images=(
-                "https://api.dicebear.com/7.x/avataaars/svg?seed=User",
-                "https://api.dicebear.com/7.x/avataaars/svg?seed=Ema"
+                None,  # User avatar - will use default
+                None   # Ema avatar - will use default
             ),
             show_label=False,
         )
@@ -94,22 +134,32 @@ def create_ui():
             )
             send_btn = gr.Button("Send", variant="primary", scale=1)
         
-        def update_chat(message, history):
-            """Update chat and return formatted history."""
-            new_message, new_history = chat(message, history)
-            return new_message, new_history, new_history
+        clear = gr.Button("Clear")
         
-        # Handle message sending
+        # Handle message sending with streaming
         msg_input.submit(
-            update_chat,
-            inputs=[msg_input, state],
-            outputs=[msg_input, state, chatbot],
+            user, 
+            [msg_input, chatbot], 
+            [msg_input, chatbot], 
+            queue=False
+        ).then(
+            bot, 
+            chatbot, 
+            chatbot
         )
+        
         send_btn.click(
-            update_chat,
-            inputs=[msg_input, state],
-            outputs=[msg_input, state, chatbot],
+            user, 
+            [msg_input, chatbot], 
+            [msg_input, chatbot], 
+            queue=False
+        ).then(
+            bot, 
+            chatbot, 
+            chatbot
         )
+        
+        clear.click(lambda: None, None, chatbot, queue=False)
     
     return demo
 
