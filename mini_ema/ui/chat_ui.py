@@ -22,14 +22,14 @@ class ChatUI:
     for creating and launching the chat application.
     """
 
-    def __init__(self, bot: BaseBot, streaming_delay: float = STREAMING_DELAY):
+    def __init__(self, bots: dict[str, BaseBot], streaming_delay: float = STREAMING_DELAY):
         """Initialize the chat UI.
 
         Args:
-            bot: The bot instance to use for generating responses
+            bots: Dictionary of bot name -> bot instance
             streaming_delay: Delay between characters when streaming (seconds)
         """
-        self.bot = bot
+        self.bots = bots
         self.streaming_delay = streaming_delay
 
     def _user_message(self, user_message: str, history: list):
@@ -44,18 +44,39 @@ class ChatUI:
         """
         return "", history + [{"role": "user", "content": user_message}]
 
-    def _bot_response(self, history: list):
+    def _bot_response(self, history: list, selected_bot: str):
         """Generate AI response with streaming.
 
         Args:
             history: Chat history
+            selected_bot: Name of the selected bot
 
         Yields:
             Updated history with streaming AI response
         """
+        # Get the selected bot instance
+        current_bot = self.bots.get(selected_bot, next(iter(self.bots.values())))
+
         # Get the AI response as an iterable of structured messages
-        user_msg = history[-1]["content"] if history else ""
-        ai_messages = self.bot.get_response(user_msg)
+        # Extract user message - handle both string and list formats
+        user_msg = ""
+        if history:
+            content = history[-1]["content"]
+            if isinstance(content, str):
+                # Case 1: content is a string
+                user_msg = content
+            elif isinstance(content, list):
+                # Case 2: content is a list like [{'text': 'da', 'type': 'text'}]
+                # Extract text from all items in the list
+                text_parts = []
+                for item in content:
+                    if isinstance(item, dict) and "text" in item:
+                        text_parts.append(item["text"])
+                user_msg = " ".join(text_parts)
+            else:
+                user_msg = str(content)
+
+        ai_messages = current_bot.get_response(user_msg)
 
         # Stream each message as a separate bubble
         for msg in ai_messages:
@@ -84,6 +105,14 @@ class ChatUI:
         with gr.Blocks() as demo:
             gr.Markdown("# 💬 Mini Ema Chat")
 
+            # Bot selector
+            bot_selector = gr.Dropdown(
+                choices=list(self.bots.keys()),
+                value=list(self.bots.keys())[0],
+                label="🤖 Select Bot",
+                interactive=True,
+            )
+
             chatbot = gr.Chatbot(
                 value=[],
                 height=600,
@@ -105,16 +134,27 @@ class ChatUI:
 
             clear = gr.Button("Clear")
 
+            def clear_chat(selected_bot):
+                """Clear chat history and reset bot."""
+                # Call clear method on the selected bot if it exists
+                bot = self.bots.get(selected_bot)
+                if bot and hasattr(bot, "clear"):
+                    bot.clear()
+                return []
+
             # Handle message sending with streaming
             msg_input.submit(self._user_message, [msg_input, chatbot], [msg_input, chatbot], queue=False).then(
-                self._bot_response, chatbot, chatbot
+                self._bot_response, [chatbot, bot_selector], chatbot
             )
 
             send_btn.click(self._user_message, [msg_input, chatbot], [msg_input, chatbot], queue=False).then(
-                self._bot_response, chatbot, chatbot
+                self._bot_response, [chatbot, bot_selector], chatbot
             )
 
-            clear.click(lambda: None, None, chatbot, queue=False)
+            clear.click(clear_chat, bot_selector, chatbot, queue=False)
+
+            # When bot selector changes, clear the chat
+            bot_selector.change(clear_chat, bot_selector, chatbot, queue=False)
 
         return demo
 

@@ -12,6 +12,14 @@ class BaseBot(ABC):
     """
 
     @abstractmethod
+    def clear(self):
+        """Clear conversation history.
+
+        This method should reset any conversation state maintained by the bot.
+        """
+        pass
+
+    @abstractmethod
     def get_response(self, message: str) -> Iterable[dict]:
         """Generate a response to a user message.
 

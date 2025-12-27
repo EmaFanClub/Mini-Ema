@@ -12,6 +12,10 @@ class SimpleBot(BaseBot):
     It returns predefined messages regardless of user input.
     """
 
+    def clear(self):
+        """Clear conversation history (no-op for SimpleBot)."""
+        pass
+
     def get_response(self, message: str) -> Iterable[dict]:
         """Get hardcoded AI response as structured messages.
 
@@ -22,9 +26,13 @@ class SimpleBot(BaseBot):
             Message dictionaries with role, content, and optional metadata
         """
         # Yield two example responses with structured format
-        yield {"role": "assistant", "content": "你好，我是Ema。", "metadata": {"title": "💭 Thinking: 我是Ema"}}
         yield {
             "role": "assistant",
-            "content": "有什么可以帮助你的吗？",
-            "metadata": {"title": "💭 Thinking: 很高兴认识你"},
+            "content": "你好，我是Ema。",
+            "metadata": {"title": "💡 Answer"},
+        }
+        yield {
+            "role": "assistant",
+            "content": "请问有什么可以帮助你的吗？",
+            "metadata": {"title": "💡 Answer"},
         }

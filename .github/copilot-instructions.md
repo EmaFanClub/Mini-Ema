@@ -1,4 +1,6 @@
-# Gemini API Coding Guidelines (Python)
+# Coding Guidelines
+
+## Gemini Python API
 
 You are a Gemini API coding expert. Help me with writing code using the Gemini
 API calling the official libraries and SDKs.
@@ -7,7 +9,7 @@ Please follow the following guidelines when generating code.
 
 **Official Documentation:** [ai.google.dev/gemini-api/docs](https://ai.google.dev/gemini-api/docs)
 
-## Golden Rule: Use the Correct and Current SDK
+### Golden Rule: Use the Correct and Current SDK
 
 Always use the **Google GenAI SDK** (`google-genai`), which is the unified
 standard library for all Gemini API requests (AI Studio/Gemini Developer API
@@ -50,7 +52,7 @@ and Vertex AI) as of 2025. Do not use legacy libraries and SDKs.
     **Correct:** `from google.genai.errors import APIError`
 -   **Incorrect:** `types.ResponseModality.TEXT`
 
-## Initialization and API Key
+### Initialization and API Key
 
 The `google-genai` library requires creating a client object for all API calls.
 
@@ -68,7 +70,7 @@ client = genai.Client()
 # client = genai.Client(api_key='YOUR_API_KEY')
 ```
 
-## Models
+### Models
 
 -   By default, use the following models when using `google-genai`:
     -   **General Text & Multimodal Tasks:** `gemini-3-flash-preview`
@@ -91,7 +93,9 @@ client = genai.Client()
     -   **Prohibited:** `gemini-1.5-pro`
     -   **Prohibited:** `gemini-pro`
 
-## Basic Inference (Text Generation)
+NOTE: Always use `gemini-3-flash-preview` for all tasks unless explicitly requested by the user.
+
+### Basic Inference (Text Generation)
 
 Here's how to generate a response from a text prompt.
 Calls are stateless using the `client.models` accessor.
@@ -109,11 +113,67 @@ response = client.models.generate_content(
 print(response.text)  # output is often markdown
 ```
 
-## Multimodal Inputs
+If we print the `GenerateContentResponse` object, it will be formatted as follows:
+
+```python
+GenerateContentResponse(
+  automatic_function_calling_history=[],
+  candidates=[
+    Candidate(
+      content=Content(
+        parts=[
+          Part(
+            text="The LLM Output",
+            thought_signature=b'\x12\x80\...'
+          ),
+        ],
+        role='model'
+      ),
+      finish_reason=<FinishReason.STOP: 'STOP'>,
+      index=0
+    ),
+  ],
+  model_version='gemini-3-flash-preview',
+  response_id='1xhQaYK',
+  sdk_http_response=HttpResponse(
+    headers=<dict len=11>
+  ),
+  usage_metadata=GenerateContentResponseUsageMetadata(
+    candidates_token_count=430,
+    prompt_token_count=7,
+    prompt_tokens_details=[
+      ModalityTokenCount(
+        modality=<MediaModality.TEXT: 'TEXT'>,
+        token_count=7
+      ),
+    ],
+    thoughts_token_count=459,
+    total_token_count=896
+  )
+)
+```
+
+You should access the attributes of the `GenerateContentResponse` object as follows:
+
+```python
+response.candidates[0].finish_reason.value # Literal['STOP', 'MAX_TOKENS', 'SAFETY']
+response.text # str
+response.parsed # pydantic object
+response.function_calls # list[types.FunctionCall]
+response.function_calls[0].name # str
+response.function_calls[0].args # dict
+response.usage_metadata.prompt_token_count # int
+response.usage_metadata.candidates_token_count # int
+response.usage_metadata.thoughts_token_count # int
+response.usage_metadata.total_token_count # int
+response.model_version # str
+```
+
+### Multimodal Inputs
 
 Pass images directly as PIL objects, bytes, or file URIs.
 
-### Using PIL Images
+#### Using PIL Images
 
 ```python
 from google import genai
@@ -130,7 +190,7 @@ response = client.models.generate_content(
 print(response.text)
 ```
 
-### Using Bytes (Best for Web/API Backends)
+#### Using Bytes (Best for Web/API Backends)
 
 You can also use `Part.from_bytes` type to pass a variety of data types (images,
 audio, video, pdf).
@@ -157,7 +217,7 @@ response = client.models.generate_content(
 print(response.text)
 ```
 
-### File API (For Large Files)
+#### File API (For Large Files)
 
 For video files or long audio, upload to the File API first.
 
@@ -176,13 +236,13 @@ print(response.text)
 client.files.delete(name=my_file.name)
 ```
 
-## Advanced Capabilities
+### Advanced Capabilities
 
-### Thinking (Reasoning)
+#### Thinking (Reasoning)
 
 Gemini 2.5 and 3 series models support explicit "thinking" for complex logic.
 
-#### Gemini 3
+##### Gemini 3
 
 Thinking is on by default for `gemini-3-pro-preview` and `gemini-3-flash-preview`.
 It can be adjusted by using the `thinking_level` parameter.
@@ -216,7 +276,9 @@ for part in response.candidates[0].content.parts:
         print(f"Response: {part.text}")
 ```
 
-#### Gemini 2.5
+NOTE: If using `gemini-3-flash-preview`, always use `types.ThinkingLevel.MINIMAL` to balance latency and reasoning depth.
+
+##### Gemini 2.5
 
 Thinking is on by default for
 `gemini-2.5-pro` and `gemini-2.5-flash`.
@@ -256,7 +318,7 @@ IMPORTANT NOTES:
     `gemini-2.0-flash` or `gemini-2.0-pro`), otherwise it will cause syntax
     errors.
 
-### System Instructions
+#### System Instructions
 
 Use system instructions to guide model's behavior.
 
@@ -276,14 +338,14 @@ response = client.models.generate_content(
 print(response.text)
 ```
 
-### Hyperparameters
+#### Hyperparameters
 
 You can also set `temperature` or `max_output_tokens` within
 `types.GenerateContentConfig`
 **Avoid** setting `max_output_tokens`, `topP`, `topK` unless explicitly
 requested by the user.
 
-### Safety configurations
+#### Safety configurations
 
 Avoid setting safety configurations unless explicitly requested by the user. If
 explicitly asked for by the user, here is a sample API:
@@ -312,7 +374,7 @@ response = client.models.generate_content(
 print(response.text)
 ```
 
-### Streaming
+#### Streaming
 
 Use `generate_content_stream` to reduce time-to-first-token.
 
@@ -330,7 +392,7 @@ for chunk in response:
     print(chunk.text, end='')
 ```
 
-### Chat
+#### Chat
 
 For multi-turn conversations, use the `chats` service to maintain conversation
 history.
@@ -353,7 +415,9 @@ for message in chat.get_history():
     print(message.parts[0].text)
 ```
 
-### Structured Outputs (Pydantic)
+NOTE: Always use the `chats` service for multi-turn conversations unless explicitly requested by the user.
+
+#### Structured Outputs (Pydantic)
 
 Enforce a specific JSON schema using standard Python type hints or Pydantic models.
 
@@ -386,7 +450,7 @@ print(response.text)
 parsed_response = response.parsed
 ```
 
-### Function Calling
+#### Function Calling
 
 You can provide the model with tools (functions) it can use to bring in external
 information to answer a question or act on a request outside the model.
@@ -410,7 +474,6 @@ response = client.models.generate_content(
     contents='What is the weather in Boston?',
     config=types.GenerateContentConfig(
         tools=[get_current_weather] # Make the function available to the model as a tool
-
     ),
 )
 
@@ -425,7 +488,7 @@ else:
     print(response.text)
 ```
 
-### Grounding (Google Search)
+#### Grounding (Google Search)
 
 Connect the model to real-time web data.
 
@@ -457,9 +520,9 @@ print(f"Search Pages: {', '.join([site.web.title for site in response.candidates
 The output `response.text` will likely not be in JSON format, do not attempt to
 parse it as JSON.
 
-## Media Generation
+### Media Generation
 
-### Generate Images
+#### Generate Images
 
 Here's how to generate images using the Nano Banana models. Start with the
 Gemini 2.5 Flash Image (Nano Banana) model as it should cover most use-cases.
@@ -522,7 +585,7 @@ for part in response.parts:
         image.save("weather.png")
 ```
 
-### Edit images
+#### Edit images
 
 Editing images is better done using the Gemini native image generation model,
 and it is recommended to use chat mode. Configs are not supported in this model
@@ -557,7 +620,7 @@ for i, part in enumerate(response.candidates[0].content.parts):
 chat.send_message('Can you make it a bananas foster?')
 ```
 
-### Video Generation (Veo)
+#### Video Generation (Veo)
 
 Use the Veo models for video generation. Usage of Veo can be costly,
 so after generating code for it, give user a heads up to check pricing for Veo.
@@ -597,7 +660,7 @@ for n, generated_video in enumerate(operation.response.generated_videos):
     generated_video.video.save(f'video{n}.mp4')  # saves the video
 ```
 
-## Content and Part Hierarchy
+### Content and Part Hierarchy
 
 While the simpler API call is often sufficient, you may run into scenarios where
 you need to work directly with the underlying `Content` and `Part` objects for
@@ -635,19 +698,54 @@ response = client.models.generate_content(
 print(response.text)
 ```
 
-## Other APIs
+### Other APIs
 
 The list of APIs and capabilities above are not comprehensive. If users ask you
 to generate code for a capability not provided above, refer them to
 ai.google.dev/gemini-api/docs.
 
-## Useful Links
+### Useful Links
 
 -   Documentation: ai.google.dev/gemini-api/docs
 -   API Keys and Authentication: ai.google.dev/gemini-api/docs/api-key
 -   Models: ai.google.dev/models
 -   API Pricing: ai.google.dev/pricing
 -   Rate Limits: ai.google.dev/rate-limits
+
+## Mini Ema Python API
+
+### Bot Metadata Structure
+
+When implementing bots that inherit from `BaseBot`, the `get_response()` method should yield dictionaries with the following structure:
+
+```python
+{
+    "role": "assistant",
+    "content": "The actual response text",
+    "metadata": {
+        "title": "💡 Answer",  # Title shown in the chat bubble (can include emoji)
+        "log": "<strong>Finish Reason:</strong> STOP<br>..."  # HTML-formatted metadata (optional)
+    }
+}
+```
+
+The `metadata.log` field should contain HTML-formatted information about the response, including:
+- **Finish Reason**: Why the model stopped generating (e.g., STOP, MAX_TOKENS)
+- **Token Usage**: Breakdown of tokens used (prompt, response, thinking, total)
+- **Model Version**: The specific model version that generated the response
+
+Example log HTML format:
+```html
+<strong>Finish Reason:</strong> STOP<br>
+<strong>Model:</strong> gemini-3-flash-preview<br>
+<strong>Token Usage:</strong><br>
+<ul style='margin: 5px 0; padding-left: 20px;'>
+  <li>Prompt: 8</li>
+  <li>Response: 9</li>
+  <li>Thinking: 303</li>
+  <li><strong>Total: 320</strong></li>
+</ul>
+```
 
 ## Code Quality and Formatting
 
