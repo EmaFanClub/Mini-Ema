@@ -1,6 +1,7 @@
 """Base bot interface for Mini Ema."""
 
 from abc import ABC, abstractmethod
+from collections.abc import Iterable
 
 
 class BaseBot(ABC):
@@ -11,7 +12,7 @@ class BaseBot(ABC):
     """
 
     @abstractmethod
-    def get_response(self, message: str, history: list | None = None) -> list[dict]:
+    def get_response(self, message: str, history: list | None = None) -> Iterable[dict]:
         """Generate a response to a user message.
 
         Args:
@@ -19,7 +20,7 @@ class BaseBot(ABC):
             history: Optional chat history for context
 
         Returns:
-            List of message dictionaries with role, content, and optional metadata.
+            Iterable of message dictionaries with role, content, and optional metadata.
             Each dictionary should have:
                 - role: "assistant"
                 - content: The message text

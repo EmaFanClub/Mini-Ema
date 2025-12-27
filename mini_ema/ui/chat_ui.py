@@ -53,7 +53,7 @@ class ChatUI:
         Yields:
             Updated history with streaming AI response
         """
-        # Get the AI response as structured messages
+        # Get the AI response as an iterable of structured messages
         user_msg = history[-1]["content"] if history else ""
         ai_messages = self.bot.get_response(user_msg, history)
 
