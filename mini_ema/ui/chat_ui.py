@@ -58,7 +58,24 @@ class ChatUI:
         current_bot = self.bots.get(selected_bot, next(iter(self.bots.values())))
 
         # Get the AI response as an iterable of structured messages
-        user_msg = history[-1]["content"] if history else ""
+        # Extract user message - handle both string and list formats
+        user_msg = ""
+        if history:
+            content = history[-1]["content"]
+            if isinstance(content, str):
+                # Case 1: content is a string
+                user_msg = content
+            elif isinstance(content, list):
+                # Case 2: content is a list like [{'text': 'da', 'type': 'text'}]
+                # Extract text from all items in the list
+                text_parts = []
+                for item in content:
+                    if isinstance(item, dict) and "text" in item:
+                        text_parts.append(item["text"])
+                user_msg = " ".join(text_parts)
+            else:
+                user_msg = str(content)
+
         ai_messages = current_bot.get_response(user_msg)
 
         # Stream each message as a separate bubble
@@ -135,6 +152,9 @@ class ChatUI:
             )
 
             clear.click(clear_chat, bot_selector, chatbot, queue=False)
+
+            # When bot selector changes, clear the chat
+            bot_selector.change(clear_chat, bot_selector, chatbot, queue=False)
 
         return demo
 
