@@ -12,12 +12,11 @@ class SimpleBot(BaseBot):
     It returns predefined messages regardless of user input.
     """
 
-    def get_response(self, message: str, history: list | None = None) -> Iterable[dict]:
+    def get_response(self, message: str) -> Iterable[dict]:
         """Get hardcoded AI response as structured messages.
 
         Args:
             message: User message (unused in hardcoded version)
-            history: Chat history (unused in hardcoded version)
 
         Yields:
             Message dictionaries with role, content, and optional metadata
