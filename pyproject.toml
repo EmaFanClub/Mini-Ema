@@ -5,6 +5,10 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [tool.ruff]
 target-version = "py311"
 line-length = 119
@@ -19,7 +23,7 @@ select = ["C", "E", "F", "I", "W", "RUF022"]
 
 [tool.ruff.lint.isort]
 lines-after-imports = 2
-known-third-party = ["openai"]
+known-third-party = ["google"]
 
 [tool.ruff.format]
 quote-style = "double"

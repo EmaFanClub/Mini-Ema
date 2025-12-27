@@ -653,11 +653,18 @@ ai.google.dev/gemini-api/docs.
 
 This project uses Ruff for code formatting and linting, following Google Python style standards.
 
+### Using uv for Dependency Management
+
+This project uses `uv` for managing dependencies and running tools. Make sure you have `uv` installed.
+
 ### Using Make Commands
 
 - **Check code style**: Run `make style` to check code formatting and linting
 - **Auto-format code**: Run `make format` to automatically format code and fix linting issues
+- **Build package**: Run `make build` to build the package
 - **Help**: Run `make help` to see available make commands
+
+All make commands use `uv` internally to run tools in an isolated environment.
 
 ### Ruff Configuration
 
@@ -666,3 +673,10 @@ The project is configured in `pyproject.toml` with:
 - Target Python version: 3.11
 - Google Python style standards
 - Import sorting with isort
+
+### Testing
+
+When testing code changes, use `uv` to run commands:
+- `uv run ruff check .` - Run linting
+- `uv run ruff format .` - Format code
+- `uv run python <script>.py` - Run Python scripts

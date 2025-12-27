@@ -4,11 +4,9 @@ on:
   push:
     branches:
       - main
-      - master
   pull_request:
     branches:
       - main
-      - master
 
 jobs:
   ruff:
@@ -24,8 +22,11 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install Ruff
-        run: pip install ruff
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install dependencies
+        run: uv pip install --system ruff
 
       - name: Run Ruff format check
         run: ruff format --check .
