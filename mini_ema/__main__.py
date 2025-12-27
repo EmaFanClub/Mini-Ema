@@ -3,7 +3,7 @@
 import gradio as gr
 from dotenv import load_dotenv
 
-from .bot import BareGeminiBot, SimpleBot
+from .bot import BareGeminiBot, PrettyGeminiBot, SimpleBot
 from .ui import ChatUI
 
 
@@ -17,6 +17,7 @@ def main():
     bots = {
         "Simple Bot": SimpleBot(),
         "Bare Gemini Bot": BareGeminiBot(),
+        "Pretty Gemini Bot": PrettyGeminiBot(),
     }
 
     # Create and launch the chat UI
