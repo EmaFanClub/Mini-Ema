@@ -1,5 +1,6 @@
 """Chat UI components for Mini Ema."""
 
+import os
 import time
 
 import gradio as gr
@@ -10,9 +11,11 @@ from ..bot.base import BaseBot
 # Streaming configuration
 STREAMING_DELAY = 0.02  # Delay between characters in seconds
 
-# Avatar images - using dicebear API for initials
-USER_AVATAR = "https://api.dicebear.com/9.x/initials/svg?seed=User"
-EMA_AVATAR = "https://api.dicebear.com/9.x/initials/svg?seed=Ema"
+# Avatar images - configurable via environment variables
+USER_AVATAR = os.getenv(
+    "USER_AVATAR", "https://github.com/user-attachments/assets/f162af9b-1f89-451d-a9ea-114694b9b8fe"
+)
+EMA_AVATAR = os.getenv("EMA_AVATAR", "https://github.com/user-attachments/assets/3f3420e7-094a-4a50-b947-1d1f56127c60")
 
 
 class ChatUI:
