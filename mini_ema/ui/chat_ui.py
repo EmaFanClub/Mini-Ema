@@ -4,7 +4,7 @@ import time
 
 import gradio as gr
 
-from mini_ema.bot.base import BaseBot
+from ..bot.base import BaseBot
 
 
 # Streaming configuration

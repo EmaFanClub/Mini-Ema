@@ -1,6 +1,6 @@
 """Simple hardcoded bot implementation."""
 
-from mini_ema.bot.base import BaseBot
+from .base import BaseBot
 
 
 class SimpleBot(BaseBot):

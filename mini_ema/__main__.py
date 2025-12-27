@@ -2,8 +2,8 @@
 
 import gradio as gr
 
-from mini_ema.bot import SimpleBot
-from mini_ema.ui import ChatUI
+from .bot import SimpleBot
+from .ui import ChatUI
 
 
 def main():
