@@ -72,7 +72,7 @@ class BareGeminiBot(BaseBot):
             response = self.chat.send_message(message)
 
             # Extract response data using direct API access
-            finish_reason = response.candidates[0].finish_reason.value
+            finish_reason = response.candidates[0].finish_reason.value.capitalize()
             text = response.text
             model_version = response.model_version
 
@@ -120,23 +120,22 @@ class BareGeminiBot(BaseBot):
             Plain text string with usage information in compact format
         """
         parts = []
-
-        # Add finish reason (shortened)
-        parts.append(f"Stop: {finish_reason}")
-
         # Add model version (shortened)
         parts.append(f"Model: {model_version}")
+
+        # Add finish reason (shortened)
+        parts.append(f"Finish: {finish_reason}")
 
         # Add token usage if available (using short labels)
         if usage_metadata:
             token_parts = []
-            token_parts.append(f"P:{usage_metadata.prompt_token_count}")
-            token_parts.append(f"R:{usage_metadata.candidates_token_count}")
+            token_parts.append(f"Prompt: {usage_metadata.prompt_token_count}")
+            token_parts.append(f"Response: {usage_metadata.candidates_token_count}")
 
             if usage_metadata.thoughts_token_count:
-                token_parts.append(f"T:{usage_metadata.thoughts_token_count}")
+                token_parts.append(f"Thoughts: {usage_metadata.thoughts_token_count}")
 
-            token_parts.append(f"Tot:{usage_metadata.total_token_count}")
-            parts.append(f"Tokens: {' | '.join(token_parts)}")
+            token_parts.append(f"Total: {usage_metadata.total_token_count}")
+            parts.append(" | ".join(token_parts))
 
         return " | ".join(parts)

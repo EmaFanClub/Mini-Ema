@@ -16,7 +16,7 @@ def main():
     # Create bot instances
     bots = {
         "Simple Bot": SimpleBot(),
-        "Gemini LLM": BareGeminiBot(),
+        "Bare Gemini Bot": BareGeminiBot(),
     }
 
     # Create and launch the chat UI
