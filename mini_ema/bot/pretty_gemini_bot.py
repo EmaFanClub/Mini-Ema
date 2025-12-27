@@ -72,6 +72,8 @@ class PrettyGeminiBot(BareGeminiBot):
         self.client = genai.Client(api_key=self.api_key)
 
         # Initialize chat session with only thinking config
+        # Note: system_instruction and response_schema are passed per-message in send_message()
+        # to ensure they apply correctly with the chat history
         self.chat = self.client.chats.create(
             model=self.model,
             config=types.GenerateContentConfig(
@@ -123,7 +125,7 @@ class PrettyGeminiBot(BareGeminiBot):
             finish_reason = response.candidates[0].finish_reason.value.capitalize()
             model_version = response.model_version
 
-            # Format usage metadata (inherited from BareGeminiBot)
+            # Format usage metadata using inherited method from BareGeminiBot
             log_text = self._format_usage_log(finish_reason, response.usage_metadata, model_version)
 
             # Format the content with character information
