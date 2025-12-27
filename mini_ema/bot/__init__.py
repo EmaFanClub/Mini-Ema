@@ -5,7 +5,8 @@ It includes base classes and implementations for different bot strategies.
 """
 
 from .base import BaseBot
+from .gemini_bot import GeminiBot
 from .simple_bot import SimpleBot
 
 
-__all__ = ["BaseBot", "SimpleBot"]
+__all__ = ["BaseBot", "GeminiBot", "SimpleBot"]

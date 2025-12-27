@@ -653,6 +653,79 @@ ai.google.dev/gemini-api/docs.
 
 This project uses Ruff for code formatting and linting, following Google Python style standards.
 
+## Mini Ema Bot Response Structure
+
+### Gemini 3 API Response Structure
+
+When calling the Gemini 3 API, the response follows this structure:
+
+```json
+{
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "AI finds patterns in data to make predictions.",
+            "thoughtSignature": "EsQJCsEJAXLI2nyqIja9uywQERY8mlayaZ4KN5JAkqEQ++ShzPC5Hr2O4F9BQp/jQX5J4s2yR9/Vl2TDz3Yvuoz1VLdabimE="
+          }
+        ],
+        "role": "model"
+      },
+      "finishReason": "STOP",
+      "index": 0
+    }
+  ],
+  "usageMetadata": {
+    "promptTokenCount": 8,
+    "candidatesTokenCount": 9,
+    "totalTokenCount": 320,
+    "promptTokensDetails": [
+      {
+        "modality": "TEXT",
+        "tokenCount": 8
+      }
+    ],
+    "thoughtsTokenCount": 303
+  },
+  "modelVersion": "gemini-3-flash-preview",
+  "responseId": "yw1QaYe1N8PW1e8Pz8KWqAc"
+}
+```
+
+### Bot Metadata Structure
+
+When implementing bots that inherit from `BaseBot`, the `get_response()` method should yield dictionaries with the following structure:
+
+```python
+{
+    "role": "assistant",
+    "content": "The actual response text",
+    "metadata": {
+        "title": "💡 Answer",  # Title shown in the chat bubble (can include emoji)
+        "log": "<strong>Finish Reason:</strong> STOP<br>..."  # HTML-formatted metadata
+    }
+}
+```
+
+The `metadata.log` field should contain HTML-formatted information about the response, including:
+- **Finish Reason**: Why the model stopped generating (e.g., STOP, MAX_TOKENS)
+- **Token Usage**: Breakdown of tokens used (prompt, response, thinking, total)
+- **Model Version**: The specific model version that generated the response
+
+Example log HTML format:
+```html
+<strong>Finish Reason:</strong> STOP<br>
+<strong>Model:</strong> gemini-3-flash-preview<br>
+<strong>Token Usage:</strong><br>
+<ul style='margin: 5px 0; padding-left: 20px;'>
+  <li>Prompt: 8</li>
+  <li>Response: 9</li>
+  <li>Thinking: 303</li>
+  <li><strong>Total: 320</strong></li>
+</ul>
+```
+
 ### Using uv for Dependency Management
 
 This project uses `uv` for managing dependencies and running tools.
