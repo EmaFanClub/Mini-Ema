@@ -648,3 +648,42 @@ ai.google.dev/gemini-api/docs.
 -   Models: ai.google.dev/models
 -   API Pricing: ai.google.dev/pricing
 -   Rate Limits: ai.google.dev/rate-limits
+
+## Code Quality and Formatting
+
+This project uses Ruff for code formatting and linting, following Google Python style standards.
+
+### Using uv for Dependency Management
+
+This project uses `uv` for managing dependencies and running tools.
+
+**Documentation**: [docs.astral.sh/uv/](https://docs.astral.sh/uv/)
+
+**Installation**:
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+### Using Make Commands
+
+- **Check code style**: Run `make style` to check code formatting and linting
+- **Auto-format code**: Run `make format` to automatically format code and fix linting issues
+- **Build package**: Run `make build` to build the package
+- **Help**: Run `make help` to see available make commands
+
+All make commands use `uv` internally to run tools in an isolated environment.
+
+### Ruff Configuration
+
+The project is configured in `pyproject.toml` with:
+- Line length: 119 characters
+- Target Python version: 3.11
+- Google Python style standards
+- Import sorting with isort
+
+### Testing
+
+When testing code changes, use `uvx` to run commands:
+- `uvx ruff check .` - Run linting
+- `uvx ruff format .` - Format code
+- `uv run python <script>.py` - Run Python scripts
