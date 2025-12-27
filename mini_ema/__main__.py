@@ -88,8 +88,8 @@ def create_ui():
             value=[],
             height=600,
             avatar_images=(
-                USER_AVATAR,  # User avatar with blue background
-                EMA_AVATAR    # Ema avatar with green background
+                USER_AVATAR,  # User avatar from dicebear initials
+                EMA_AVATAR    # Ema avatar from dicebear initials
             ),
             show_label=False,
         )
