@@ -73,9 +73,9 @@ class GeminiBot(BaseBot):
                         full_text += part.text
 
                 # Get metadata
-                finish_reason = candidate.finish_reason if hasattr(candidate, "finish_reason") else "UNKNOWN"
-                usage_metadata = response.usage_metadata if hasattr(response, "usage_metadata") else None
-                model_version = response.model_version if hasattr(response, "model_version") else self.model
+                finish_reason = getattr(candidate, "finish_reason", "UNKNOWN")
+                usage_metadata = getattr(response, "usage_metadata", None)
+                model_version = getattr(response, "model_version", self.model)
 
                 # Format usage metadata as HTML
                 log_html = self._format_usage_log(finish_reason, usage_metadata, model_version)
@@ -142,17 +142,21 @@ class GeminiBot(BaseBot):
             html_parts.append("<strong>Token Usage:</strong>")
             html_parts.append("<ul style='margin: 5px 0; padding-left: 20px;'>")
 
-            if hasattr(usage_metadata, "prompt_token_count"):
-                html_parts.append(f"<li>Prompt: {usage_metadata.prompt_token_count}</li>")
+            prompt_tokens = getattr(usage_metadata, "prompt_token_count", None)
+            if prompt_tokens is not None:
+                html_parts.append(f"<li>Prompt: {prompt_tokens}</li>")
 
-            if hasattr(usage_metadata, "candidates_token_count"):
-                html_parts.append(f"<li>Response: {usage_metadata.candidates_token_count}</li>")
+            response_tokens = getattr(usage_metadata, "candidates_token_count", None)
+            if response_tokens is not None:
+                html_parts.append(f"<li>Response: {response_tokens}</li>")
 
-            if hasattr(usage_metadata, "thoughts_token_count") and usage_metadata.thoughts_token_count:
-                html_parts.append(f"<li>Thinking: {usage_metadata.thoughts_token_count}</li>")
+            thinking_tokens = getattr(usage_metadata, "thoughts_token_count", None)
+            if thinking_tokens:
+                html_parts.append(f"<li>Thinking: {thinking_tokens}</li>")
 
-            if hasattr(usage_metadata, "total_token_count"):
-                html_parts.append(f"<li><strong>Total: {usage_metadata.total_token_count}</strong></li>")
+            total_tokens = getattr(usage_metadata, "total_token_count", None)
+            if total_tokens is not None:
+                html_parts.append(f"<li><strong>Total: {total_tokens}</strong></li>")
 
             html_parts.append("</ul>")
 
