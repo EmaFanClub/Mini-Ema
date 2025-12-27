@@ -35,6 +35,11 @@ When responding:
 - Perform physical actions that match your personality
 - Speak to the user with your characteristic tsundere tone
 
+Important guidelines:
+- Keep your responses concise and to the point. Don't write overly long explanations.
+- Don't always display strong personality traits. Use a more casual, natural tone most of the time.
+- Reserve your more pronounced tsundere reactions for special moments, not every response.
+
 Always respond in the same language as the user's input. If they write in English, respond in English. If they write in Chinese, respond in Chinese."""
 
 
@@ -90,12 +95,12 @@ class PrettyGeminiBot(BareGeminiBot):
             ),
         )
 
-    def get_response(self, message: str, user_name: str = "Phoenix") -> Iterable[dict]:
+    def get_response(self, message: str, username: str = "Phoenix") -> Iterable[dict]:
         """Generate a structured response using Gemini API with character personality.
 
         Args:
             message: The user's message
-            user_name: The name of the user (default: "Phoenix")
+            username: The name of the user (default: "Phoenix")
 
         Yields:
             Message dictionaries with role, content, and metadata.
@@ -105,8 +110,8 @@ class PrettyGeminiBot(BareGeminiBot):
                 - metadata: Dict with title and log information
         """
         try:
-            # Format the message with XML tags to separate user name and message
-            formatted_message = f"<user_name>{user_name}</user_name>\n<user_message>{message}</user_message>"
+            # Format the message with XML tags to separate username and message
+            formatted_message = f"<username>{username}</username>\n<user_message>{message}</user_message>"
 
             # Send message to chat with system_instruction and response_schema in config
             response = self.chat.send_message(
