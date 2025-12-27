@@ -4,6 +4,7 @@ import os
 from collections.abc import Iterable
 
 from google import genai
+from google.genai import types
 from google.genai.errors import APIError
 
 from .base import BaseBot
@@ -36,12 +37,22 @@ class BareGeminiBot(BaseBot):
         # Initialize the Gemini client
         self.client = genai.Client(api_key=self.api_key)
 
-        # Initialize chat session
-        self.chat = self.client.chats.create(model=self.model)
+        # Initialize chat session with thinking config
+        self.chat = self.client.chats.create(
+            model=self.model,
+            config=types.GenerateContentConfig(
+                thinking_config=types.ThinkingConfig(thinking_level=types.ThinkingLevel.MEDIUM)
+            ),
+        )
 
     def clear(self):
         """Clear conversation history by creating a new chat session."""
-        self.chat = self.client.chats.create(model=self.model)
+        self.chat = self.client.chats.create(
+            model=self.model,
+            config=types.GenerateContentConfig(
+                thinking_config=types.ThinkingConfig(thinking_level=types.ThinkingLevel.MEDIUM)
+            ),
+        )
 
     def get_response(self, message: str) -> Iterable[dict]:
         """Generate a response using Gemini API with conversation history.

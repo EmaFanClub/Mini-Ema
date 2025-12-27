@@ -4,8 +4,8 @@ This module provides the AI bot functionality for generating responses.
 It includes base classes and implementations for different bot strategies.
 """
 
+from .bare_gemini_bot import BareGeminiBot
 from .base import BaseBot
-from .gemini_bot import BareGeminiBot
 from .simple_bot import SimpleBot
 
 
