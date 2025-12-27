@@ -8,9 +8,13 @@ from gradio import ChatMessage
 # Streaming configuration
 STREAMING_DELAY = 0.02  # Delay between characters in seconds
 
-# Styling constants
-THINKING_STYLE = 'color: #374151; font-style: italic; margin-bottom: 8px; font-size: 16px;'
-ANSWER_STYLE = 'color: #111827; font-size: 16px;'
+# Styling constants - removed colors to allow theme adaptation
+THINKING_STYLE = 'font-style: italic; margin-bottom: 8px; font-size: 16px;'
+ANSWER_STYLE = 'font-size: 16px;'
+
+# Avatar images - data URIs with solid color backgrounds and text
+USER_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect width='80' height='80' fill='%234A90E2'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial, sans-serif' font-size='24' fill='white'%3EUser%3C/text%3E%3C/svg%3E"
+EMA_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect width='80' height='80' fill='%2350C878'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial, sans-serif' font-size='24' fill='white'%3EEma%3C/text%3E%3C/svg%3E"
 
 
 def parse_ai_responses(response: str) -> list[tuple[str, str]]:
@@ -87,11 +91,13 @@ def bot(history: list):
     # Parse into multiple messages
     messages = parse_ai_responses(ai_response)
     
-    # Stream each message
+    # Stream each message as a separate bubble
     for thinking, answer in messages:
+        # Create a new bubble for each message
+        history.append({"role": "assistant", "content": ""})
+        
         # Add thinking part with streaming
         if thinking:
-            history.append({"role": "assistant", "content": ""})
             thinking_prefix = f'<div style="{THINKING_STYLE}">💭 '
             history[-1]["content"] = thinking_prefix
             for char in thinking:
@@ -103,9 +109,6 @@ def bot(history: list):
         
         # Add answer part with streaming
         if answer:
-            if not thinking:
-                history.append({"role": "assistant", "content": ""})
-            
             answer_prefix = f'<div style="{ANSWER_STYLE}">'
             if thinking:
                 history[-1]["content"] += answer_prefix
@@ -129,8 +132,8 @@ def create_ui():
             value=[],
             height=600,
             avatar_images=(
-                None,  # User avatar - will use default
-                None   # Ema avatar - will use default
+                USER_AVATAR,  # User avatar with blue background
+                EMA_AVATAR    # Ema avatar with green background
             ),
             show_label=False,
         )

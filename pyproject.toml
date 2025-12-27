@@ -4,12 +4,9 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
-<<<<<<< HEAD
-=======
 dependencies = [
     "gradio>=4.0.0",
 ]
->>>>>>> f6a911f (Merge main branch and resolve conflicts in pyproject.toml)
 
 [build-system]
 requires = ["hatchling"]
