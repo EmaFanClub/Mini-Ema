@@ -9,8 +9,8 @@ from gradio import ChatMessage
 STREAMING_DELAY = 0.02  # Delay between characters in seconds
 
 # Styling constants
-THINKING_STYLE = 'color: #6B7280; font-style: italic; margin-bottom: 8px;'
-ANSWER_STYLE = 'color: #1F2937;'
+THINKING_STYLE = 'color: #374151; font-style: italic; margin-bottom: 8px; font-size: 16px;'
+ANSWER_STYLE = 'color: #111827; font-size: 16px;'
 
 
 def parse_ai_responses(response: str) -> list[tuple[str, str]]:
@@ -56,7 +56,7 @@ def get_ai_response(message: str) -> str:
     Returns:
         Hardcoded AI response (can contain multiple messages)
     """
-    return "<think>我是Ema</think><answer>你好，我是Ema。</answer>"
+    return "<think>我是Ema</think><answer>你好，我是Ema。</answer><think>很高兴认识你</think><answer>有什么可以帮助你的吗？</answer>"
 
 
 def user(user_message: str, history: list):
@@ -177,7 +177,7 @@ def create_ui():
 def main():
     """Main entry point."""
     demo = create_ui()
-    demo.launch(theme=gr.themes.Soft())
+    demo.launch(theme=gr.themes.Default())
 
 
 if __name__ == "__main__":
