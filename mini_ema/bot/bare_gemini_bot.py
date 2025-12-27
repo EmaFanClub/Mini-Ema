@@ -17,12 +17,14 @@ class BareGeminiBot(BaseBot):
     AI-powered responses using the Gemini 3 Flash model with conversation history.
     """
 
-    def __init__(self, api_key: str | None = None, model: str | None = None):
+    def __init__(self, api_key: str | None = None, model: str | None = None, thinking_level: str | None = None):
         """Initialize the Gemini bot.
 
         Args:
             api_key: Gemini API key. If None, reads from GEMINI_API_KEY env var.
             model: Model name to use. If None, reads from GEMINI_MODEL env var or uses default.
+            thinking_level: Thinking level (MINIMAL, LOW, MEDIUM, HIGH). If None, reads from
+                BARE_GEMINI_BOT_THINKING_LEVEL env var or uses MINIMAL as default.
         """
         # Get API key from parameter or environment variable
         self.api_key = api_key or os.getenv("GEMINI_API_KEY")
@@ -34,6 +36,10 @@ class BareGeminiBot(BaseBot):
         # Get model name from parameter or environment variable
         self.model = model or os.getenv("GEMINI_MODEL", "gemini-3-flash-preview")
 
+        # Get thinking level from parameter or environment variable
+        thinking_level_str = thinking_level or os.getenv("BARE_GEMINI_BOT_THINKING_LEVEL", "MINIMAL")
+        self.thinking_level = getattr(types.ThinkingLevel, thinking_level_str.upper(), types.ThinkingLevel.MINIMAL)
+
         # Initialize the Gemini client
         self.client = genai.Client(api_key=self.api_key)
 
@@ -41,7 +47,7 @@ class BareGeminiBot(BaseBot):
         self.chat = self.client.chats.create(
             model=self.model,
             config=types.GenerateContentConfig(
-                thinking_config=types.ThinkingConfig(thinking_level=types.ThinkingLevel.MINIMAL)
+                thinking_config=types.ThinkingConfig(thinking_level=self.thinking_level)
             ),
         )
 
@@ -50,7 +56,7 @@ class BareGeminiBot(BaseBot):
         self.chat = self.client.chats.create(
             model=self.model,
             config=types.GenerateContentConfig(
-                thinking_config=types.ThinkingConfig(thinking_level=types.ThinkingLevel.MINIMAL)
+                thinking_config=types.ThinkingConfig(thinking_level=self.thinking_level)
             ),
         )
 
