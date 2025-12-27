@@ -117,14 +117,7 @@ def create_ui():
 def main():
     """Main entry point."""
     demo = create_ui()
-    demo.launch(
-        theme=gr.themes.Soft(),
-        css="""
-        .message-row {
-            margin: 8px 0;
-        }
-        """
-    )
+    demo.launch(theme=gr.themes.Soft())
 
 
 if __name__ == "__main__":
