@@ -648,3 +648,21 @@ ai.google.dev/gemini-api/docs.
 -   Models: ai.google.dev/models
 -   API Pricing: ai.google.dev/pricing
 -   Rate Limits: ai.google.dev/rate-limits
+
+## Code Quality and Formatting
+
+This project uses Ruff for code formatting and linting, following Google Python style standards.
+
+### Using Make Commands
+
+- **Check code style**: Run `make style` to check code formatting and linting
+- **Auto-format code**: Run `make format` to automatically format code and fix linting issues
+- **Help**: Run `make help` to see available make commands
+
+### Ruff Configuration
+
+The project is configured in `pyproject.toml` with:
+- Line length: 119 characters
+- Target Python version: 3.11
+- Google Python style standards
+- Import sorting with isort
