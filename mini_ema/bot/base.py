@@ -12,12 +12,11 @@ class BaseBot(ABC):
     """
 
     @abstractmethod
-    def get_response(self, message: str, history: list | None = None) -> Iterable[dict]:
+    def get_response(self, message: str) -> Iterable[dict]:
         """Generate a response to a user message.
 
         Args:
             message: The user's message
-            history: Optional chat history for context
 
         Yields:
             Message dictionaries with role, content, and optional metadata.

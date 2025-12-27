@@ -55,7 +55,7 @@ class ChatUI:
         """
         # Get the AI response as an iterable of structured messages
         user_msg = history[-1]["content"] if history else ""
-        ai_messages = self.bot.get_response(user_msg, history)
+        ai_messages = self.bot.get_response(user_msg)
 
         # Stream each message as a separate bubble
         for msg in ai_messages:
