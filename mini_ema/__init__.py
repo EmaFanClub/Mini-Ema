@@ -9,4 +9,4 @@ from .ui import ChatUI
 
 
 __version__ = "0.1.0"
-__all__ = ["BaseBot", "SimpleBot", "ChatUI"]
+__all__ = ["BaseBot", "ChatUI", "SimpleBot"]

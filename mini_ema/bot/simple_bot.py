@@ -23,5 +23,9 @@ class SimpleBot(BaseBot):
         # Return two example responses with structured format
         return [
             {"role": "assistant", "content": "你好，我是Ema。", "metadata": {"title": "💭 Thinking: 我是Ema"}},
-            {"role": "assistant", "content": "有什么可以帮助你的吗？", "metadata": {"title": "💭 Thinking: 很高兴认识你"}},
+            {
+                "role": "assistant",
+                "content": "有什么可以帮助你的吗？",
+                "metadata": {"title": "💭 Thinking: 很高兴认识你"},
+            },
         ]

@@ -3,7 +3,7 @@
 This module provides the user interface components for the chat application.
 """
 
-from .chat_ui import ChatUI, EMA_AVATAR, STREAMING_DELAY, USER_AVATAR
+from .chat_ui import EMA_AVATAR, STREAMING_DELAY, USER_AVATAR, ChatUI
 
 
-__all__ = ["ChatUI", "USER_AVATAR", "EMA_AVATAR", "STREAMING_DELAY"]
+__all__ = ["EMA_AVATAR", "STREAMING_DELAY", "USER_AVATAR", "ChatUI"]

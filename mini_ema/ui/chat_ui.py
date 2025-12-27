@@ -106,13 +106,13 @@ class ChatUI:
             clear = gr.Button("Clear")
 
             # Handle message sending with streaming
-            msg_input.submit(
-                self._user_message, [msg_input, chatbot], [msg_input, chatbot], queue=False
-            ).then(self._bot_response, chatbot, chatbot)
+            msg_input.submit(self._user_message, [msg_input, chatbot], [msg_input, chatbot], queue=False).then(
+                self._bot_response, chatbot, chatbot
+            )
 
-            send_btn.click(
-                self._user_message, [msg_input, chatbot], [msg_input, chatbot], queue=False
-            ).then(self._bot_response, chatbot, chatbot)
+            send_btn.click(self._user_message, [msg_input, chatbot], [msg_input, chatbot], queue=False).then(
+                self._bot_response, chatbot, chatbot
+            )
 
             clear.click(lambda: None, None, chatbot, queue=False)
 
