@@ -44,13 +44,13 @@ class ChatUI:
         """
         return "", history + [{"role": "user", "content": user_message}]
 
-    def _bot_response(self, history: list, selected_bot: str, character_name: str):
+    def _bot_response(self, history: list, selected_bot: str, user_name: str):
         """Generate AI response with streaming.
 
         Args:
             history: Chat history
             selected_bot: Name of the selected bot
-            character_name: The name of the character to address
+            user_name: The name of the user
 
         Yields:
             Updated history with streaming AI response
@@ -77,7 +77,7 @@ class ChatUI:
             else:
                 user_msg = str(content)
 
-        ai_messages = current_bot.get_response(user_msg, character_name)
+        ai_messages = current_bot.get_response(user_msg, user_name)
 
         # Stream each message as a separate bubble
         for msg in ai_messages:
@@ -114,11 +114,11 @@ class ChatUI:
                 interactive=True,
             )
 
-            # Character name input
-            character_name_input = gr.Textbox(
+            # User name input
+            user_name_input = gr.Textbox(
                 value="Phoenix",
-                label="👤 Character Name",
-                placeholder="Enter character name...",
+                label="👤 User Name",
+                placeholder="Enter user name...",
                 interactive=True,
             )
 
@@ -153,11 +153,11 @@ class ChatUI:
 
             # Handle message sending with streaming
             msg_input.submit(self._user_message, [msg_input, chatbot], [msg_input, chatbot], queue=False).then(
-                self._bot_response, [chatbot, bot_selector, character_name_input], chatbot
+                self._bot_response, [chatbot, bot_selector, user_name_input], chatbot
             )
 
             send_btn.click(self._user_message, [msg_input, chatbot], [msg_input, chatbot], queue=False).then(
-                self._bot_response, [chatbot, bot_selector, character_name_input], chatbot
+                self._bot_response, [chatbot, bot_selector, user_name_input], chatbot
             )
 
             clear.click(clear_chat, bot_selector, chatbot, queue=False)

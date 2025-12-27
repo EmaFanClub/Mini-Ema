@@ -9,7 +9,7 @@ from google.genai import types
 from google.genai.errors import APIError
 from pydantic import BaseModel, Field
 
-from .base import BaseBot
+from .bare_gemini_bot import BareGeminiBot
 
 
 class EmaMessage(BaseModel):
@@ -38,7 +38,7 @@ When responding:
 Always respond in the same language as the user's input. If they write in English, respond in English. If they write in Chinese, respond in Chinese."""
 
 
-class PrettyGeminiBot(BaseBot):
+class PrettyGeminiBot(BareGeminiBot):
     """A bot that uses Gemini's structured outputs to generate character-driven responses.
 
     This bot uses Pydantic models to enforce a structured response format that includes
@@ -71,14 +71,11 @@ class PrettyGeminiBot(BaseBot):
         # Initialize the Gemini client
         self.client = genai.Client(api_key=self.api_key)
 
-        # Initialize chat session with thinking config, system instruction, and structured output
+        # Initialize chat session with only thinking config
         self.chat = self.client.chats.create(
             model=self.model,
             config=types.GenerateContentConfig(
-                system_instruction=SYSTEM_INSTRUCTION,
                 thinking_config=types.ThinkingConfig(thinking_level=self.thinking_level),
-                response_mime_type="application/json",
-                response_schema=EmaMessage,
             ),
         )
 
@@ -87,19 +84,16 @@ class PrettyGeminiBot(BaseBot):
         self.chat = self.client.chats.create(
             model=self.model,
             config=types.GenerateContentConfig(
-                system_instruction=SYSTEM_INSTRUCTION,
                 thinking_config=types.ThinkingConfig(thinking_level=self.thinking_level),
-                response_mime_type="application/json",
-                response_schema=EmaMessage,
             ),
         )
 
-    def get_response(self, message: str, character_name: str = "Phoenix") -> Iterable[dict]:
+    def get_response(self, message: str, user_name: str = "Phoenix") -> Iterable[dict]:
         """Generate a structured response using Gemini API with character personality.
 
         Args:
             message: The user's message
-            character_name: The name of the character to address (default: "Phoenix")
+            user_name: The name of the user (default: "Phoenix")
 
         Yields:
             Message dictionaries with role, content, and metadata.
@@ -109,13 +103,18 @@ class PrettyGeminiBot(BaseBot):
                 - metadata: Dict with title and log information
         """
         try:
-            # Format the message with XML tags to separate character name and message
-            formatted_message = (
-                f"<character_name>{character_name}</character_name>\n<user_message>{message}</user_message>"
-            )
+            # Format the message with XML tags to separate user name and message
+            formatted_message = f"<user_name>{user_name}</user_name>\n<user_message>{message}</user_message>"
 
-            # Send message to chat and get response
-            response = self.chat.send_message(formatted_message)
+            # Send message to chat with system_instruction and response_schema in config
+            response = self.chat.send_message(
+                formatted_message,
+                config=types.GenerateContentConfig(
+                    system_instruction=SYSTEM_INSTRUCTION,
+                    response_mime_type="application/json",
+                    response_schema=EmaMessage,
+                ),
+            )
 
             # Parse the structured response
             ema_message = response.parsed
@@ -124,7 +123,7 @@ class PrettyGeminiBot(BaseBot):
             finish_reason = response.candidates[0].finish_reason.value.capitalize()
             model_version = response.model_version
 
-            # Format usage metadata
+            # Format usage metadata (inherited from BareGeminiBot)
             log_text = self._format_usage_log(finish_reason, response.usage_metadata, model_version)
 
             # Format the content with character information
@@ -170,16 +169,16 @@ class PrettyGeminiBot(BaseBot):
         """
         parts = []
 
-        # Add thoughts (italicized)
+        # Add thoughts (italicized with parentheses)
         if ema_message.think:
-            parts.append(f"*{ema_message.think}*")
+            parts.append(f"*({ema_message.think})*")
 
         # Add expression and action indicators
         indicators = []
         if ema_message.expression and ema_message.expression != "neutral":
-            indicators.append(f"[{ema_message.expression}]")
+            indicators.append(f"[Expression: {ema_message.expression}]")
         if ema_message.action and ema_message.action != "none":
-            indicators.append(f"[{ema_message.action}]")
+            indicators.append(f"[Action: {ema_message.action}]")
 
         if indicators:
             parts.append(" ".join(indicators))
@@ -208,35 +207,3 @@ class PrettyGeminiBot(BaseBot):
             "sad": "😢",
         }
         return emoji_map.get(expression, "💬")
-
-    def _format_usage_log(self, finish_reason: str, usage_metadata, model_version: str) -> str:
-        """Format usage metadata as plain text.
-
-        Args:
-            finish_reason: The reason the model stopped generating
-            usage_metadata: Usage metadata from the response
-            model_version: The model version used
-
-        Returns:
-            Plain text string with usage information in compact format
-        """
-        parts = []
-        # Add model version (shortened)
-        parts.append(f"Model: {model_version}")
-
-        # Add finish reason (shortened)
-        parts.append(f"Finish: {finish_reason}")
-
-        # Add token usage if available (using short labels)
-        if usage_metadata:
-            token_parts = []
-            token_parts.append(f"Prompt: {usage_metadata.prompt_token_count}")
-            token_parts.append(f"Response: {usage_metadata.candidates_token_count}")
-
-            if usage_metadata.thoughts_token_count:
-                token_parts.append(f"Thoughts: {usage_metadata.thoughts_token_count}")
-
-            token_parts.append(f"Total: {usage_metadata.total_token_count}")
-            parts.append(" | ".join(token_parts))
-
-        return " | ".join(parts)
