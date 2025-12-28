@@ -12,10 +12,8 @@ from ..bot.base import BaseBot
 STREAMING_DELAY = 0.02  # Delay between characters in seconds
 
 # Avatar images - configurable via environment variables
-USER_AVATAR = os.getenv(
-    "USER_AVATAR", "https://github.com/user-attachments/assets/f162af9b-1f89-451d-a9ea-114694b9b8fe"
-)
-EMA_AVATAR = os.getenv("EMA_AVATAR", "https://github.com/user-attachments/assets/3f3420e7-094a-4a50-b947-1d1f56127c60")
+USER_AVATAR = os.getenv("USER_AVATAR", "assets/imgs/user.png")
+EMA_AVATAR = os.getenv("EMA_AVATAR", "assets/imgs/ema.png")
 
 
 class ChatUI:
