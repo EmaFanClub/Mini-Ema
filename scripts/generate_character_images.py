@@ -110,7 +110,7 @@ The character should be looking at the viewer."""
         # Save the generated image as JPG with 80% quality
         for part in response.candidates[0].content.parts:
             if part.inline_data is not None:
-                image = part.as_image()
+                image = part.as_image()._pil_image
                 # Convert to RGB if necessary (JPG doesn't support transparency)
                 if image.mode in ("RGBA", "LA", "P"):
                     rgb_image = Image.new("RGB", image.size, (255, 255, 255))
