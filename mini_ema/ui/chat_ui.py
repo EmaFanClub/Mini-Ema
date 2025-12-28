@@ -195,9 +195,10 @@ class ChatUI:
                     # Expression display
                     expression_image = gr.Image(
                         value=self._get_expression_image_path("neutral", "none"),
-                        label="💫 Ema's Expression",
-                        height=300,
+                        label="Ema Live",
+                        height=200,
                         show_label=True,
+                        buttons=[],
                     )
 
             chatbot = gr.Chatbot(
