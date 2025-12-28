@@ -143,17 +143,37 @@ class ChatUI:
 
             history.append(new_message)
 
+            # Track last parsed expression to avoid redundant parsing
+            last_expression = None
+            last_action = None
+
             # Stream the content character by character
             content = msg.get("content", "")
-            for char in content:
+            for i, char in enumerate(content):
                 history[-1]["content"] += char
                 time.sleep(self.streaming_delay)
-                # Parse expression and action from the current content
-                expression, action = self._parse_expression_and_action(history[-1]["content"])
-                image_path = self._get_expression_image_path(expression, action)
-                yield history, image_path
 
-            # Final yield with complete content
+                # Only parse expression/action when we encounter ']' character
+                # or at regular intervals to reduce redundant parsing
+                if char == "]" or i % 20 == 0 or i == len(content) - 1:
+                    expression, action = self._parse_expression_and_action(history[-1]["content"])
+                    # Only update image if expression/action changed
+                    if expression != last_expression or action != last_action:
+                        last_expression = expression
+                        last_action = action
+                        image_path = self._get_expression_image_path(expression, action)
+                        yield history, image_path
+                    else:
+                        # Yield without updating image
+                        yield (
+                            history,
+                            self._get_expression_image_path(last_expression or "neutral", last_action or "none"),
+                        )
+                else:
+                    # Skip parsing, use last known image
+                    yield history, self._get_expression_image_path(last_expression or "neutral", last_action or "none")
+
+            # Final yield with complete content to ensure state is saved
             expression, action = self._parse_expression_and_action(content)
             self.current_expression = expression
             self.current_action = action
