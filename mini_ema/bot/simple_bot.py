@@ -26,14 +26,14 @@ class SimpleBot(BaseBot):
         Yields:
             Message dictionaries with role, content, and optional metadata
         """
-        # Yield two example responses with structured format
+        # Yield two example responses with structured format including expression and action
         yield {
             "role": "assistant",
-            "content": "你好，我是Ema。",
+            "content": "[Expression: smile] [Action: wave]\n\n你好，我是Ema。",
             "metadata": {"title": "💡 Answer"},
         }
         yield {
             "role": "assistant",
-            "content": "请问有什么可以帮助你的吗？",
+            "content": "[Expression: neutral] [Action: none]\n\n请问有什么可以帮助你的吗？",
             "metadata": {"title": "💡 Answer"},
         }
