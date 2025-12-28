@@ -68,7 +68,7 @@ class ChatUI:
                 # Case 1: content is a string
                 user_msg = content
             elif isinstance(content, list):
-                # Case 2: content is a list like [{'text': 'da', 'type': 'text'}]
+                # Case 2: content is a list like [{'text': 'hello', 'type': 'text'}]
                 # Extract text from all items in the list
                 text_parts = []
                 for item in content:
@@ -118,8 +118,8 @@ class ChatUI:
             # User name input
             username_input = gr.Textbox(
                 value="Phoenix",
-                label="👤 User Name",
-                placeholder="Enter user name...",
+                label="👤 Username",
+                placeholder="Enter your username...",
                 interactive=True,
             )
 
