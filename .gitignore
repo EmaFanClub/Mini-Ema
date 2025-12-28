@@ -209,3 +209,5 @@ __marimo__/
 # Generated character images
 assets/gen_imgs/*.jpg
 assets/gen_imgs/*.png
+
+.DS_Store

@@ -21,8 +21,8 @@ Expression = Literal["neutral", "smile", "serious", "confused", "surprised", "sa
 Action = Literal["none", "nod", "shake", "wave", "jump", "point"]
 
 # All possible expressions and actions
-EXPRESSIONS: list[str] = ["neutral", "smile", "serious", "confused", "surprised", "sad"]
-ACTIONS: list[str] = ["none", "nod", "shake", "wave", "jump", "point"]
+EXPRESSIONS: list[Expression] = ["neutral", "smile", "serious", "confused", "surprised", "sad"]
+ACTIONS: list[Action] = ["none", "nod", "shake", "wave", "jump", "point"]
 
 
 def load_api_key() -> str:
@@ -68,7 +68,7 @@ def generate_character_image(
     """
     # Expression and action descriptions in English
     expression_desc = {
-        "neutral": "normal/default",
+        "neutral": "normal",
         "smile": "smiling",
         "serious": "serious",
         "confused": "confused",
@@ -80,7 +80,7 @@ def generate_character_image(
         "none": "no action",
         "nod": "nodding",
         "shake": "shaking head",
-        "wave": "waving",
+        "wave": "waving hand",
         "jump": "jumping",
         "point": "pointing",
     }
@@ -118,6 +118,7 @@ The character should be looking at the viewer."""
                         image = image.convert("RGBA")
                     rgb_image.paste(image, mask=image.split()[-1] if image.mode in ("RGBA", "LA") else None)
                     image = rgb_image
+
                 # Save as JPG with 80% quality
                 image.save(output_path, "JPEG", quality=80)
                 print("✓")
