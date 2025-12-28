@@ -21,8 +21,8 @@ Expression = Literal["neutral", "smile", "serious", "confused", "surprised", "sa
 Action = Literal["none", "nod", "shake", "wave", "jump", "point"]
 
 # All possible expressions and actions
-EXPRESSIONS: list[Expression] = ["neutral", "smile", "serious", "confused", "surprised", "sad"]
-ACTIONS: list[Action] = ["none", "nod", "shake", "wave", "jump", "point"]
+EXPRESSIONS: list[str] = ["neutral", "smile", "serious", "confused", "surprised", "sad"]
+ACTIONS: list[str] = ["none", "nod", "shake", "wave", "jump", "point"]
 
 
 def load_api_key() -> str:
@@ -66,9 +66,28 @@ def generate_character_image(
     Returns:
         True if generation was successful, False otherwise
     """
+    # Expression and action descriptions in Chinese
+    expression_desc = {
+        "neutral": "普通/默认",
+        "smile": "微笑",
+        "serious": "严肃",
+        "confused": "困惑",
+        "surprised": "惊讶",
+        "sad": "低落",
+    }
+
+    action_desc_dict = {
+        "none": "无动作",
+        "nod": "点头",
+        "shake": "摇头",
+        "wave": "挥手",
+        "jump": "跳跃",
+        "point": "指向",
+    }
+
     # Create prompt for image editing
-    action_desc = f" doing a {action} action" if action != "none" else ""
-    prompt = f"""Edit this anime character portrait to show the character with a {expression} expression{action_desc}.
+    action_desc = f" doing a {action} action ({action_desc_dict[action]})" if action != "none" else ""
+    prompt = f"""Edit this anime character portrait to show the character with a {expression} expression ({expression_desc[expression]}){action_desc}.
 
 Keep the character's appearance and style exactly the same, only change the facial expression and pose.
 Make it a clean, professional anime-style portrait suitable for a chat interface avatar.
@@ -88,11 +107,19 @@ The character should be looking at the viewer."""
             print("✗ (no candidates in response)")
             return False
 
-        # Save the generated image
+        # Save the generated image as JPG with 80% quality
         for part in response.candidates[0].content.parts:
             if part.inline_data is not None:
                 image = part.as_image()
-                image.save(output_path)
+                # Convert to RGB if necessary (JPG doesn't support transparency)
+                if image.mode in ("RGBA", "LA", "P"):
+                    rgb_image = Image.new("RGB", image.size, (255, 255, 255))
+                    if image.mode == "P":
+                        image = image.convert("RGBA")
+                    rgb_image.paste(image, mask=image.split()[-1] if image.mode in ("RGBA", "LA") else None)
+                    image = rgb_image
+                # Save as JPG with 80% quality
+                image.save(output_path, "JPEG", quality=80)
                 print("✓")
                 return True
 
@@ -142,8 +169,8 @@ def main():
     for expression in EXPRESSIONS:
         print(f"\n{expression.upper()}:")
         for action in ACTIONS:
-            # Create filename: expression_action.png
-            filename = f"{expression}_{action}.png"
+            # Create filename: expression_action.jpg
+            filename = f"{expression}_{action}.jpg"
             output_path = output_dir / filename
 
             # Generate the image

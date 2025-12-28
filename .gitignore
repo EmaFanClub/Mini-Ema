@@ -205,3 +205,7 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Generated character images
+assets/gen_imgs/*.jpg
+assets/gen_imgs/*.png
