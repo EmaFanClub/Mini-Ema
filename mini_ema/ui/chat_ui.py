@@ -27,9 +27,6 @@ class ChatUI:
     for creating and launching the chat application.
     """
 
-    # How often to parse expression/action during streaming (every N characters)
-    EXPRESSION_PARSE_INTERVAL = 20
-
     def __init__(self, bots: dict[str, BaseBot], streaming_delay: float = STREAMING_DELAY):
         """Initialize the chat UI.
 
@@ -52,14 +49,17 @@ class ChatUI:
         """
         return "", history + [{"role": "user", "content": user_message}]
 
-    def _parse_expression_and_action(self, content: str) -> tuple[str, str]:
-        """Parse expression and action from AI response content.
+    def _parse_expression_and_action(self, content: str) -> tuple[str, str, str]:
+        """Parse expression and action from AI response content and remove tags.
 
         Args:
             content: The AI response content
 
         Returns:
-            Tuple of (expression, action)
+            Tuple of (expression, action, cleaned_content)
+            - expression: The facial expression
+            - action: The physical action
+            - cleaned_content: Content with expression/action tags removed
         """
         # Default values
         expression = "neutral"
@@ -75,7 +75,14 @@ class ChatUI:
         if action_match:
             action = action_match.group(1).lower()
 
-        return expression, action
+        # Remove expression and action tags from content
+        cleaned_content = re.sub(r"\[Expression:\s*\w+\]", "", content, flags=re.IGNORECASE)
+        cleaned_content = re.sub(r"\[Action:\s*\w+\]", "", cleaned_content, flags=re.IGNORECASE)
+        # Clean up extra whitespace and newlines
+        cleaned_content = re.sub(r"\n\s*\n\s*\n", "\n\n", cleaned_content)
+        cleaned_content = cleaned_content.strip()
+
+        return expression, action, cleaned_content
 
     def _get_expression_image_path(self, expression: str, action: str) -> str:
         """Get the path to the expression image.
@@ -133,13 +140,13 @@ class ChatUI:
 
         ai_messages = current_bot.get_response(user_msg, username)
 
-        # Track last parsed expression/action and cached image path across all messages
-        last_expression = None
-        last_action = None
-        last_image_path = self._get_expression_image_path("neutral", "none")
-
         # Stream each message as a separate bubble
         for msg in ai_messages:
+            # Get complete content and parse expression/action once
+            content = msg.get("content", "")
+            expression, action, cleaned_content = self._parse_expression_and_action(content)
+            image_path = self._get_expression_image_path(expression, action)
+
             # Create a new bubble for each message
             new_message = {"role": "assistant", "content": ""}
 
@@ -149,36 +156,14 @@ class ChatUI:
 
             history.append(new_message)
 
-            # Stream the content character by character
-            content = msg.get("content", "")
-            for i, char in enumerate(content):
+            # Stream the cleaned content character by character
+            for char in cleaned_content:
                 history[-1]["content"] += char
                 time.sleep(self.streaming_delay)
+                yield history, image_path
 
-                # Only parse expression/action when we encounter ']' character
-                # or at regular intervals to reduce redundant parsing
-                if char == "]" or i % self.EXPRESSION_PARSE_INTERVAL == 0 or i == len(content) - 1:
-                    expression, action = self._parse_expression_and_action(history[-1]["content"])
-                    # Only update image if expression/action changed
-                    if expression != last_expression or action != last_action:
-                        last_expression = expression
-                        last_action = action
-                        last_image_path = self._get_expression_image_path(expression, action)
-                        yield history, last_image_path
-                    else:
-                        # Yield without updating image (use cached path)
-                        yield history, last_image_path
-                else:
-                    # Skip parsing, use last known cached image path
-                    yield history, last_image_path
-
-            # Final yield with complete content
-            expression, action = self._parse_expression_and_action(content)
-            if expression != last_expression or action != last_action:
-                last_expression = expression
-                last_action = action
-                last_image_path = self._get_expression_image_path(expression, action)
-            yield history, last_image_path
+            # Final yield to ensure complete state
+            yield history, image_path
 
     def create_interface(self) -> gr.Blocks:
         """Create the Gradio chat interface.
