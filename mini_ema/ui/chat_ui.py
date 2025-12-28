@@ -75,9 +75,8 @@ class ChatUI:
         if action_match:
             action = action_match.group(1).lower()
 
-        # Remove expression and action tags from content
-        cleaned_content = re.sub(r"\[Expression:\s*\w+\]", "", content, flags=re.IGNORECASE)
-        cleaned_content = re.sub(r"\[Action:\s*\w+\]", "", cleaned_content, flags=re.IGNORECASE)
+        # Remove expression and action tags from content in a single pass
+        cleaned_content = re.sub(r"\[(Expression|Action):\s*\w+\]", "", content, flags=re.IGNORECASE)
         # Clean up extra whitespace and newlines
         cleaned_content = re.sub(r"\n\s*\n\s*\n", "\n\n", cleaned_content)
         cleaned_content = cleaned_content.strip()
