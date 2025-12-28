@@ -66,23 +66,23 @@ def generate_character_image(
     Returns:
         True if generation was successful, False otherwise
     """
-    # Expression and action descriptions in Chinese
+    # Expression and action descriptions in English
     expression_desc = {
-        "neutral": "普通/默认",
-        "smile": "微笑",
-        "serious": "严肃",
-        "confused": "困惑",
-        "surprised": "惊讶",
-        "sad": "低落",
+        "neutral": "normal/default",
+        "smile": "smiling",
+        "serious": "serious",
+        "confused": "confused",
+        "surprised": "surprised",
+        "sad": "sad",
     }
 
     action_desc_dict = {
-        "none": "无动作",
-        "nod": "点头",
-        "shake": "摇头",
-        "wave": "挥手",
-        "jump": "跳跃",
-        "point": "指向",
+        "none": "no action",
+        "nod": "nodding",
+        "shake": "shaking head",
+        "wave": "waving",
+        "jump": "jumping",
+        "point": "pointing",
     }
 
     # Create prompt for image editing
