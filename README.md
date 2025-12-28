@@ -81,8 +81,7 @@ AI-powered bot using Google's Gemini API with the `gemini-3-flash-preview` model
 
 ### Pretty Gemini Bot
 Advanced AI-powered bot using Gemini's Structured Outputs capability. Features:
-- Character personality: Kristina, an 18-year-old genius scientist with a tsundere personality
-- Research focus: AI and large language models
+- Character personality: Ema, a helpful AI assistant with a friendly and casual conversational style
 - Structured output format with:
   - Internal thoughts (think)
   - Facial expressions (neutral, smile, serious, confused, surprised, sad)
