@@ -1,6 +1,7 @@
 """Chat UI components for Mini Ema."""
 
 import os
+import re
 import time
 
 import gradio as gr
@@ -14,6 +15,9 @@ STREAMING_DELAY = 0.02  # Delay between characters in seconds
 # Avatar images - configurable via environment variables
 USER_AVATAR = os.getenv("USER_AVATAR", "assets/imgs/user.png")
 EMA_AVATAR = os.getenv("EMA_AVATAR", "assets/imgs/ema.png")
+
+# Expression images directory
+EXPRESSION_IMGS_DIR = os.getenv("EXPRESSION_IMGS_DIR", "assets/gen_imgs")
 
 
 class ChatUI:
@@ -45,6 +49,61 @@ class ChatUI:
         """
         return "", history + [{"role": "user", "content": user_message}]
 
+    def _parse_expression_and_action(self, content: str) -> tuple[str, str, str]:
+        """Parse expression and action from AI response content and remove tags.
+
+        Args:
+            content: The AI response content
+
+        Returns:
+            Tuple of (expression, action, cleaned_content)
+            - expression: The facial expression
+            - action: The physical action
+            - cleaned_content: Content with expression/action tags removed
+        """
+        # Default values
+        expression = "neutral"
+        action = "none"
+
+        # Try to match expression pattern: [Expression: <expression>]
+        expression_match = re.search(r"\[Expression:\s*(\w+)\]", content, re.IGNORECASE)
+        if expression_match:
+            expression = expression_match.group(1).lower()
+
+        # Try to match action pattern: [Action: <action>]
+        action_match = re.search(r"\[Action:\s*(\w+)\]", content, re.IGNORECASE)
+        if action_match:
+            action = action_match.group(1).lower()
+
+        # Remove expression and action tags from content in a single pass
+        cleaned_content = re.sub(r"\[(Expression|Action):\s*\w+\]", "", content, flags=re.IGNORECASE)
+        # Clean up extra whitespace and newlines
+        cleaned_content = re.sub(r"\n\s*\n\s*\n", "\n\n", cleaned_content)
+        cleaned_content = cleaned_content.strip()
+
+        return expression, action, cleaned_content
+
+    def _get_expression_image_path(self, expression: str, action: str) -> str:
+        """Get the path to the expression image.
+
+        Args:
+            expression: The facial expression
+            action: The physical action
+
+        Returns:
+            Path to the expression image file, or default avatar if not found
+        """
+        # Build the image filename
+        image_filename = f"{expression}_{action}.jpg"
+        image_path = os.path.join(EXPRESSION_IMGS_DIR, image_filename)
+
+        # Check if the image exists
+        if os.path.exists(image_path):
+            return image_path
+        else:
+            # Fallback to default avatar
+            return EMA_AVATAR
+
     def _bot_response(self, history: list, selected_bot: str, username: str):
         """Generate AI response with streaming.
 
@@ -54,7 +113,7 @@ class ChatUI:
             username: The name of the user
 
         Yields:
-            Updated history with streaming AI response
+            Tuple of (updated history, expression image path)
         """
         # Get the selected bot instance
         current_bot = self.bots.get(selected_bot, next(iter(self.bots.values())))
@@ -82,6 +141,11 @@ class ChatUI:
 
         # Stream each message as a separate bubble
         for msg in ai_messages:
+            # Get complete content and parse expression/action once
+            content = msg.get("content", "")
+            expression, action, cleaned_content = self._parse_expression_and_action(content)
+            image_path = self._get_expression_image_path(expression, action)
+
             # Create a new bubble for each message
             new_message = {"role": "assistant", "content": ""}
 
@@ -91,12 +155,14 @@ class ChatUI:
 
             history.append(new_message)
 
-            # Stream the content character by character
-            content = msg.get("content", "")
-            for char in content:
+            # Stream the cleaned content character by character
+            for char in cleaned_content:
                 history[-1]["content"] += char
                 time.sleep(self.streaming_delay)
-                yield history
+                yield history, image_path
+
+            # Final yield to ensure complete state
+            yield history, image_path
 
     def create_interface(self) -> gr.Blocks:
         """Create the Gradio chat interface.
@@ -107,21 +173,33 @@ class ChatUI:
         with gr.Blocks() as demo:
             gr.Markdown("# 💬 Mini Ema Chat")
 
-            # Bot selector
-            bot_selector = gr.Dropdown(
-                choices=list(self.bots.keys()),
-                value=list(self.bots.keys())[0],
-                label="🤖 Select Bot",
-                interactive=True,
-            )
+            with gr.Row():
+                with gr.Column(scale=3):
+                    # Bot selector
+                    bot_selector = gr.Dropdown(
+                        choices=list(self.bots.keys()),
+                        value=list(self.bots.keys())[0],
+                        label="🤖 Select Bot",
+                        interactive=True,
+                    )
 
-            # User name input
-            username_input = gr.Textbox(
-                value="Phoenix",
-                label="👤 Username",
-                placeholder="Enter your username...",
-                interactive=True,
-            )
+                    # User name input
+                    username_input = gr.Textbox(
+                        value="Phoenix",
+                        label="👤 Username",
+                        placeholder="Enter username...",
+                        interactive=True,
+                    )
+
+                with gr.Column(scale=1):
+                    # Expression display
+                    expression_image = gr.Image(
+                        value=self._get_expression_image_path("neutral", "none"),
+                        label="Ema Live",
+                        height=200,
+                        show_label=True,
+                        buttons=[],
+                    )
 
             chatbot = gr.Chatbot(
                 value=[],
@@ -147,21 +225,23 @@ class ChatUI:
                 bot = self.bots.get(selected_bot)
                 if bot and hasattr(bot, "clear"):
                     bot.clear()
-                return []
+                # Reset expression to default
+                default_image = self._get_expression_image_path("neutral", "none")
+                return [], default_image
 
             # Handle message sending with streaming
             msg_input.submit(self._user_message, [msg_input, chatbot], [msg_input, chatbot], queue=False).then(
-                self._bot_response, [chatbot, bot_selector, username_input], chatbot
+                self._bot_response, [chatbot, bot_selector, username_input], [chatbot, expression_image]
             )
 
             send_btn.click(self._user_message, [msg_input, chatbot], [msg_input, chatbot], queue=False).then(
-                self._bot_response, [chatbot, bot_selector, username_input], chatbot
+                self._bot_response, [chatbot, bot_selector, username_input], [chatbot, expression_image]
             )
 
-            clear.click(clear_chat, bot_selector, chatbot, queue=False)
+            clear.click(clear_chat, bot_selector, [chatbot, expression_image], queue=False)
 
             # When bot selector changes, clear the chat
-            bot_selector.change(clear_chat, bot_selector, chatbot, queue=False)
+            bot_selector.change(clear_chat, bot_selector, [chatbot, expression_image], queue=False)
 
         return demo
 

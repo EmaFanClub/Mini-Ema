@@ -35,6 +35,22 @@ uv run python -m mini_ema
 
 The application will start a web server and open the chat interface in your browser.
 
+### Generating Character Images (Optional)
+
+To generate custom character expression images using the Gemini API:
+
+```bash
+uv run python scripts/generate_character_images.py
+```
+
+This will generate images for all combinations of expressions and actions in `assets/gen_imgs/`. The script requires:
+- A valid `GEMINI_API_KEY` in your `.env` file
+- The base character image at `assets/imgs/ema.png`
+
+Generated images are named in the format: `{expression}_{action}.jpg` (e.g., `smile_wave.jpg`, `sad_none.jpg`)
+
+**Note:** Image generation uses the Gemini API and may incur costs. Placeholder images are included by default.
+
 ## Project Structure
 
 ```
@@ -59,6 +75,12 @@ mini_ema/
 - Avatar images for User and Ema
 - **Bot selector dropdown** to switch between different AI bots
 - **User name input** to personalize interactions (default: "Phoenix")
+- **Expression display** shows Ema's character image with dynamic facial expressions and actions
+  - Automatically parses expression and action from AI responses
+  - Displays corresponding character images from `assets/gen_imgs/`
+  - Updates in real-time during conversation
+  - Supports expressions: neutral, smile, serious, confused, surprised, sad
+  - Supports actions: none, nod, shake, wave, jump, point
 - AI responses show metadata including:
   - Response title with emoji
   - Finish reason
