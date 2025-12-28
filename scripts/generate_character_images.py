@@ -83,6 +83,11 @@ The character should be looking at the viewer."""
         # Send the image and prompt
         response = chat.send_message([prompt, base_image])
 
+        # Check if response has candidates
+        if not response.candidates:
+            print("✗ (no candidates in response)")
+            return False
+
         # Save the generated image
         for part in response.candidates[0].content.parts:
             if part.inline_data is not None:
