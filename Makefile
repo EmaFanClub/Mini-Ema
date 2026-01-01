@@ -20,11 +20,7 @@ build:
 .PHONY: test
 test:
 	@echo "Running tests..."
-	@for test_file in tests/test_*.py; do \
-		echo "Running $$test_file..."; \
-		uv run python $$test_file || exit 1; \
-	done
-	@echo "All tests passed!"
+	uv run pytest -vvv tests
 
 .PHONY: help
 help:
