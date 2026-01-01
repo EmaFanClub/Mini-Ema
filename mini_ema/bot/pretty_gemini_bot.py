@@ -42,6 +42,9 @@ Important guidelines:
 
 Always respond in the same language as the user's input. If they write in English, respond in English. If they write in Chinese, respond in Chinese."""
 
+# Number of messages per conversation round (user message + assistant response)
+MESSAGES_PER_ROUND = 2
+
 
 class PrettyGeminiBot(BareGeminiBot):
     """A bot that uses Gemini's structured outputs to generate character-driven responses.
@@ -109,8 +112,8 @@ class PrettyGeminiBot(BareGeminiBot):
             formatted_message = f"<username>{username}</username>\n<user_message>{message}</user_message>"
 
             # Get the recent N rounds of history based on history_length
-            # Each round consists of a user message and an assistant response (2 messages)
-            max_history_messages = self.history_length * 2
+            # Each round consists of a user message and an assistant response
+            max_history_messages = self.history_length * MESSAGES_PER_ROUND
             recent_history = self.conversation_history[-max_history_messages:] if self.conversation_history else []
 
             # Create a new chat session with the recent history
@@ -151,11 +154,15 @@ class PrettyGeminiBot(BareGeminiBot):
             # Since we created the chat with existing history and then sent one new message,
             # the new messages are at the end. We need to get only the new user message and response.
             history_before_length = len(recent_history)
-            if len(updated_history) >= history_before_length + 2:
-                # Add the new user message (at index history_before_length)
-                self.conversation_history.append(updated_history[history_before_length])
-                # Add the new assistant response (at index history_before_length + 1)
-                self.conversation_history.append(updated_history[history_before_length + 1])
+            # Validate that we have both user and assistant messages before appending
+            if len(updated_history) >= history_before_length + MESSAGES_PER_ROUND:
+                # Extract the new user message and assistant response
+                new_user_message = updated_history[history_before_length]
+                new_assistant_message = updated_history[history_before_length + 1]
+                # Verify both messages exist and are valid
+                if new_user_message and new_assistant_message:
+                    self.conversation_history.append(new_user_message)
+                    self.conversation_history.append(new_assistant_message)
 
             # Yield the response with metadata
             yield {
