@@ -73,27 +73,22 @@ class PrettyGeminiBot(BareGeminiBot):
         thinking_level_str = thinking_level or os.getenv("PRETTY_GEMINI_BOT_THINKING_LEVEL", "MINIMAL")
         self.thinking_level = getattr(types.ThinkingLevel, thinking_level_str.upper(), types.ThinkingLevel.MINIMAL)
 
+        # Get conversation history length from environment variable
+        history_length_str = os.getenv("PRETTY_GEMINI_BOT_HISTORY_LENGTH", "10")
+        try:
+            self.history_length = int(history_length_str)
+        except ValueError:
+            self.history_length = 10  # Default to 10 if invalid
+
         # Initialize the Gemini client
         self.client = genai.Client(api_key=self.api_key)
 
-        # Initialize chat session with only thinking config
-        # Note: system_instruction and response_schema are passed per-message in send_message()
-        # to ensure they apply correctly with the chat history
-        self.chat = self.client.chats.create(
-            model=self.model,
-            config=types.GenerateContentConfig(
-                thinking_config=types.ThinkingConfig(thinking_level=self.thinking_level),
-            ),
-        )
+        # Initialize conversation history array
+        self.conversation_history = []
 
     def clear(self):
-        """Clear conversation history by creating a new chat session."""
-        self.chat = self.client.chats.create(
-            model=self.model,
-            config=types.GenerateContentConfig(
-                thinking_config=types.ThinkingConfig(thinking_level=self.thinking_level),
-            ),
-        )
+        """Clear conversation history."""
+        self.conversation_history = []
 
     def get_response(self, message: str, username: str = "Phoenix") -> Iterable[dict]:
         """Generate a structured response using Gemini API with character personality.
@@ -113,8 +108,22 @@ class PrettyGeminiBot(BareGeminiBot):
             # Format the message with XML tags to separate username and message
             formatted_message = f"<username>{username}</username>\n<user_message>{message}</user_message>"
 
+            # Get the recent N rounds of history based on history_length
+            # Each round consists of a user message and an assistant response (2 messages)
+            max_history_messages = self.history_length * 2
+            recent_history = self.conversation_history[-max_history_messages:] if self.conversation_history else []
+
+            # Create a new chat session with the recent history
+            chat = self.client.chats.create(
+                model=self.model,
+                config=types.GenerateContentConfig(
+                    thinking_config=types.ThinkingConfig(thinking_level=self.thinking_level),
+                ),
+                history=recent_history,
+            )
+
             # Send message to chat with system_instruction and response_schema in config
-            response = self.chat.send_message(
+            response = chat.send_message(
                 formatted_message,
                 config=types.GenerateContentConfig(
                     system_instruction=SYSTEM_INSTRUCTION,
@@ -135,6 +144,16 @@ class PrettyGeminiBot(BareGeminiBot):
 
             # Format the content with character information
             content = self._format_message(ema_message)
+
+            # Add user message and assistant response to conversation history
+            # Get the full history from the chat session to capture all message parts
+            updated_history = chat.get_history()
+            # The last two items should be the user message and assistant response
+            if len(updated_history) >= 2:
+                # Add the user message (second to last)
+                self.conversation_history.append(updated_history[-2])
+                # Add the assistant response (last)
+                self.conversation_history.append(updated_history[-1])
 
             # Yield the response with metadata
             yield {
