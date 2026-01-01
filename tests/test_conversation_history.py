@@ -84,6 +84,11 @@ def test_automatic_trimming():
     assert recent == ["user3", "assistant3", "user4", "assistant4"]
     assert len(recent) == 4
 
+    # The internal history should also be trimmed to 4 messages (automatic trimming)
+    all_messages = history.get_all_messages()
+    assert len(all_messages) == 4
+    assert all_messages == ["user3", "assistant3", "user4", "assistant4"]
+
 
 def test_clear():
     """Test clearing conversation history."""

@@ -24,16 +24,25 @@ class ConversationHistory:
         self._lock = threading.Lock()
         self._history: list[Any] = []
         self._max_rounds = max(0, max_rounds)
+        # Ensure at least 1 message per round to prevent degenerate cases
         self._messages_per_round = max(1, messages_per_round)
 
     def add_messages(self, messages: list[Any]) -> None:
         """Add messages to the conversation history in a thread-safe manner.
+
+        Messages are appended to the history. If the total number of messages exceeds
+        the maximum capacity (max_rounds * messages_per_round), older messages are
+        automatically removed to maintain the limit.
 
         Args:
             messages: List of messages to add to the history.
         """
         with self._lock:
             self._history.extend(messages)
+            # Trim history to keep only the most recent messages
+            max_capacity = self._max_rounds * self._messages_per_round
+            if max_capacity > 0 and len(self._history) > max_capacity:
+                self._history = self._history[-max_capacity:]
 
     def get_recent_messages(self, max_rounds: int | None = None) -> list[Any]:
         """Get the most recent N rounds of messages in a thread-safe manner.
