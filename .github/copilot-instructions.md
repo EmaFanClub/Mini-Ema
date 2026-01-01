@@ -64,7 +64,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 - **Check code style**: Run `make style` to check code formatting and linting
 - **Auto-format code**: Run `make format` to automatically format code and fix linting issues
 - **Build package**: Run `make build` to build the package
-- **Run tests**: Run `make test` to run all tests
+- **Run tests**: Run `make test` to run unit tests
 - **Help**: Run `make help` to see available make commands
 
 All make commands use `uv` internally to run tools in an isolated environment.
@@ -76,3 +76,10 @@ The project is configured in `pyproject.toml` with:
 - Target Python version: 3.11
 - Google Python style standards
 - Import sorting with isort
+
+### Testing
+
+- Run linting: `make style`
+- Format code: `make format`
+- Run Python scripts: `uv run python <script>.py`
+- Run unit tests: `make test`
