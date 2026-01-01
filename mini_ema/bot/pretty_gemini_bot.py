@@ -113,8 +113,18 @@ class PrettyGeminiBot(BareGeminiBot):
 
             # Get the recent N rounds of history based on history_length
             # Each round consists of a user message and an assistant response
+            # Ensure we trim at round boundaries to maintain conversation context integrity
             max_history_messages = self.history_length * MESSAGES_PER_ROUND
-            recent_history = self.conversation_history[-max_history_messages:]
+            # Calculate the actual start index to ensure we get complete rounds
+            history_size = len(self.conversation_history)
+            if history_size > max_history_messages:
+                # Trim to the last N complete rounds
+                recent_history = self.conversation_history[-max_history_messages:]
+            else:
+                # If history is smaller than limit, ensure it's in complete rounds
+                # This handles edge cases where history might have incomplete rounds
+                complete_rounds = (history_size // MESSAGES_PER_ROUND) * MESSAGES_PER_ROUND
+                recent_history = self.conversation_history[-complete_rounds:] if complete_rounds > 0 else []
 
             # Create a new chat session with the recent history
             chat = self.client.chats.create(
