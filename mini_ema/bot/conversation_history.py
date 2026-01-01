@@ -57,10 +57,6 @@ class ConversationHistory:
             # Calculate the maximum number of messages to return
             max_messages = rounds * self._messages_per_round
 
-            # Handle the edge case where max_messages is 0
-            if max_messages == 0:
-                return []
-
             # Return the last max_messages from history
             # Handle the case where max_messages >= len(history)
             return self._history[-max_messages:] if self._history else []
