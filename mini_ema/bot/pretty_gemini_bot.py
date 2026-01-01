@@ -1,8 +1,9 @@
 """Pretty Gemini bot with structured outputs and character personality."""
 
 import os
+import threading
 from collections.abc import Iterable
-from typing import Literal
+from typing import Any, Literal
 
 from google import genai
 from google.genai import types
@@ -10,7 +11,55 @@ from google.genai.errors import APIError
 from pydantic import BaseModel, Field
 
 from .bare_gemini_bot import BareGeminiBot
-from .conversation_history import ConversationHistory
+
+
+class ConversationHistory:
+    """Thread-safe conversation history manager.
+
+    This class manages conversation history with a maximum number of rounds,
+    ensuring thread-safe operations when multiple threads access the history.
+    Each round consists of 2 messages (user message + assistant response).
+    """
+
+    def __init__(self):
+        """Initialize the conversation history manager.
+
+        Reads max_rounds from PRETTY_GEMINI_BOT_HISTORY_LENGTH environment variable.
+        """
+        self._lock = threading.Lock()
+        self._history: list[Any] = []
+        # Read max_rounds from environment variable
+        history_length_str = os.getenv("PRETTY_GEMINI_BOT_HISTORY_LENGTH", "10")
+        max_rounds = max(0, int(history_length_str))
+        # Calculate max capacity once in init (max_rounds * 2 messages per round)
+        self._max_capacity = max_rounds * 2
+
+    def add_messages(self, messages: list[Any]) -> None:
+        """Add messages to the conversation history in a thread-safe manner.
+
+        Messages are appended to the history and automatically trimmed to max_capacity.
+
+        Args:
+            messages: List of messages to add to the history.
+        """
+        with self._lock:
+            self._history.extend(messages)
+            # Always trim to max_capacity
+            self._history = self._history[-self._max_capacity :] if self._max_capacity > 0 else []
+
+    def get_recent_messages(self) -> list[Any]:
+        """Get all messages in the conversation history in a thread-safe manner.
+
+        Returns:
+            List of all messages in the history.
+        """
+        with self._lock:
+            return self._history.copy()
+
+    def clear(self) -> None:
+        """Clear all conversation history in a thread-safe manner."""
+        with self._lock:
+            self._history = []
 
 
 class EmaMessage(BaseModel):
@@ -77,17 +126,11 @@ class PrettyGeminiBot(BareGeminiBot):
         thinking_level_str = thinking_level or os.getenv("PRETTY_GEMINI_BOT_THINKING_LEVEL", "MINIMAL")
         self.thinking_level = getattr(types.ThinkingLevel, thinking_level_str.upper(), types.ThinkingLevel.MINIMAL)
 
-        # Get conversation history length from environment variable
-        history_length_str = os.getenv("PRETTY_GEMINI_BOT_HISTORY_LENGTH", "10")
-        self.history_length = max(0, int(history_length_str))  # Ensure non-negative
-
         # Initialize the Gemini client
         self.client = genai.Client(api_key=self.api_key)
 
         # Initialize thread-safe conversation history manager
-        self.conversation_history = ConversationHistory(
-            max_rounds=self.history_length, messages_per_round=MESSAGES_PER_ROUND
-        )
+        self.conversation_history = ConversationHistory()
 
     def clear(self):
         """Clear conversation history."""
@@ -146,20 +189,9 @@ class PrettyGeminiBot(BareGeminiBot):
             # Format the content with character information
             content = self._format_message(ema_message)
 
-            # Add user message and assistant response to conversation history
-            # Get the full history from the chat session to capture all message parts
+            # Add the last 2 messages from chat history (user message and assistant response)
             updated_history = chat.get_history()
-            # Since we created the chat with existing history and then sent one new message,
-            # the new messages are at the end. We need to get only the new user message and response.
-            history_before_length = len(recent_history)
-            # Validate that we have both user and assistant messages before appending
-            if len(updated_history) >= history_before_length + MESSAGES_PER_ROUND:
-                # Extract the new user message and assistant response
-                new_user_message = updated_history[history_before_length]
-                new_assistant_message = updated_history[history_before_length + 1]
-                # Verify both messages exist and are valid (not None)
-                if new_user_message is not None and new_assistant_message is not None:
-                    self.conversation_history.add_messages([new_user_message, new_assistant_message])
+            self.conversation_history.add_messages(updated_history[-2:])
 
             # Yield the response with metadata
             yield {
