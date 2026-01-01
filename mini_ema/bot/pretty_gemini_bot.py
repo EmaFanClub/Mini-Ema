@@ -141,7 +141,7 @@ class PrettyGeminiBot(BareGeminiBot):
                 "role": "assistant",
                 "content": content,
                 "metadata": {
-                    "title": f"{self._get_emoji(ema_message.expression)} Ema",
+                    "title": "💡 Answer",
                     "log": log_text,
                 },
             }
