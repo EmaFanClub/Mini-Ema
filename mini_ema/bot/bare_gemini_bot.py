@@ -115,7 +115,9 @@ class BareGeminiBot(BaseBot):
                 },
             }
 
-    def _format_usage_log(self, finish_reason: str, usage_metadata: types.GenerateContentResponseUsageMetadata, model_version: str) -> str:
+    def _format_usage_log(
+        self, finish_reason: str, usage_metadata: types.GenerateContentResponseUsageMetadata, model_version: str
+    ) -> str:
         """Format usage metadata as plain text.
 
         Args:
