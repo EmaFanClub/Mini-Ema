@@ -78,10 +78,7 @@ class PrettyGeminiBot(BareGeminiBot):
 
         # Get conversation history length from environment variable
         history_length_str = os.getenv("PRETTY_GEMINI_BOT_HISTORY_LENGTH", "10")
-        try:
-            self.history_length = max(0, int(history_length_str))  # Ensure non-negative
-        except ValueError:
-            self.history_length = 10  # Default to 10 if invalid
+        self.history_length = max(0, int(history_length_str))  # Ensure non-negative
 
         # Initialize the Gemini client
         self.client = genai.Client(api_key=self.api_key)
@@ -113,18 +110,8 @@ class PrettyGeminiBot(BareGeminiBot):
 
             # Get the recent N rounds of history based on history_length
             # Each round consists of a user message and an assistant response
-            # Ensure we trim at round boundaries to maintain conversation context integrity
             max_history_messages = self.history_length * MESSAGES_PER_ROUND
-            # Calculate the actual start index to ensure we get complete rounds
-            history_size = len(self.conversation_history)
-            if history_size > max_history_messages:
-                # Trim to the last N complete rounds
-                recent_history = self.conversation_history[-max_history_messages:]
-            else:
-                # If history is smaller than limit, ensure it's in complete rounds
-                # This handles edge cases where history might have incomplete rounds
-                complete_rounds = (history_size // MESSAGES_PER_ROUND) * MESSAGES_PER_ROUND
-                recent_history = self.conversation_history[-complete_rounds:] if complete_rounds > 0 else []
+            recent_history = self.conversation_history[-max_history_messages:]
 
             # Create a new chat session with the recent history
             chat = self.client.chats.create(
