@@ -76,7 +76,7 @@ class PrettyGeminiBot(BareGeminiBot):
         # Get conversation history length from environment variable
         history_length_str = os.getenv("PRETTY_GEMINI_BOT_HISTORY_LENGTH", "10")
         try:
-            self.history_length = int(history_length_str)
+            self.history_length = max(0, int(history_length_str))  # Ensure non-negative
         except ValueError:
             self.history_length = 10  # Default to 10 if invalid
 
@@ -148,12 +148,14 @@ class PrettyGeminiBot(BareGeminiBot):
             # Add user message and assistant response to conversation history
             # Get the full history from the chat session to capture all message parts
             updated_history = chat.get_history()
-            # The last two items should be the user message and assistant response
-            if len(updated_history) >= 2:
-                # Add the user message (second to last)
-                self.conversation_history.append(updated_history[-2])
-                # Add the assistant response (last)
-                self.conversation_history.append(updated_history[-1])
+            # Since we created the chat with existing history and then sent one new message,
+            # the new messages are at the end. We need to get only the new user message and response.
+            history_before_length = len(recent_history)
+            if len(updated_history) >= history_before_length + 2:
+                # Add the new user message (at index history_before_length)
+                self.conversation_history.append(updated_history[history_before_length])
+                # Add the new assistant response (at index history_before_length + 1)
+                self.conversation_history.append(updated_history[history_before_length + 1])
 
             # Yield the response with metadata
             yield {
