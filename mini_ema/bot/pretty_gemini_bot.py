@@ -10,6 +10,7 @@ from google.genai.errors import APIError
 from pydantic import BaseModel, Field
 
 from .bare_gemini_bot import BareGeminiBot
+from .conversation_history import ConversationHistory
 
 
 class EmaMessage(BaseModel):
@@ -83,12 +84,14 @@ class PrettyGeminiBot(BareGeminiBot):
         # Initialize the Gemini client
         self.client = genai.Client(api_key=self.api_key)
 
-        # Initialize conversation history array
-        self.conversation_history = []
+        # Initialize thread-safe conversation history manager
+        self.conversation_history = ConversationHistory(
+            max_rounds=self.history_length, messages_per_round=MESSAGES_PER_ROUND
+        )
 
     def clear(self):
         """Clear conversation history."""
-        self.conversation_history = []
+        self.conversation_history.clear()
 
     def get_response(self, message: str, username: str = "Phoenix") -> Iterable[dict]:
         """Generate a structured response using Gemini API with character personality.
@@ -108,10 +111,8 @@ class PrettyGeminiBot(BareGeminiBot):
             # Format the message with XML tags to separate username and message
             formatted_message = f"<username>{username}</username>\n<user_message>{message}</user_message>"
 
-            # Get the recent N rounds of history based on history_length
-            # Each round consists of a user message and an assistant response
-            max_history_messages = self.history_length * MESSAGES_PER_ROUND
-            recent_history = self.conversation_history[-max_history_messages:]
+            # Get the recent N rounds of history from the thread-safe history manager
+            recent_history = self.conversation_history.get_recent_messages()
 
             # Create a new chat session with the recent history
             chat = self.client.chats.create(
@@ -158,8 +159,7 @@ class PrettyGeminiBot(BareGeminiBot):
                 new_assistant_message = updated_history[history_before_length + 1]
                 # Verify both messages exist and are valid (not None)
                 if new_user_message is not None and new_assistant_message is not None:
-                    self.conversation_history.append(new_user_message)
-                    self.conversation_history.append(new_assistant_message)
+                    self.conversation_history.add_messages([new_user_message, new_assistant_message])
 
             # Yield the response with metadata
             yield {
