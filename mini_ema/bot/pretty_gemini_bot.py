@@ -42,6 +42,9 @@ Important guidelines:
 
 Always respond in the same language as the user's input. If they write in English, respond in English. If they write in Chinese, respond in Chinese."""
 
+# Number of messages per conversation round (user message + assistant response)
+MESSAGES_PER_ROUND = 2
+
 
 class PrettyGeminiBot(BareGeminiBot):
     """A bot that uses Gemini's structured outputs to generate character-driven responses.
@@ -73,27 +76,19 @@ class PrettyGeminiBot(BareGeminiBot):
         thinking_level_str = thinking_level or os.getenv("PRETTY_GEMINI_BOT_THINKING_LEVEL", "MINIMAL")
         self.thinking_level = getattr(types.ThinkingLevel, thinking_level_str.upper(), types.ThinkingLevel.MINIMAL)
 
+        # Get conversation history length from environment variable
+        history_length_str = os.getenv("PRETTY_GEMINI_BOT_HISTORY_LENGTH", "10")
+        self.history_length = max(0, int(history_length_str))  # Ensure non-negative
+
         # Initialize the Gemini client
         self.client = genai.Client(api_key=self.api_key)
 
-        # Initialize chat session with only thinking config
-        # Note: system_instruction and response_schema are passed per-message in send_message()
-        # to ensure they apply correctly with the chat history
-        self.chat = self.client.chats.create(
-            model=self.model,
-            config=types.GenerateContentConfig(
-                thinking_config=types.ThinkingConfig(thinking_level=self.thinking_level),
-            ),
-        )
+        # Initialize conversation history array
+        self.conversation_history = []
 
     def clear(self):
-        """Clear conversation history by creating a new chat session."""
-        self.chat = self.client.chats.create(
-            model=self.model,
-            config=types.GenerateContentConfig(
-                thinking_config=types.ThinkingConfig(thinking_level=self.thinking_level),
-            ),
-        )
+        """Clear conversation history."""
+        self.conversation_history = []
 
     def get_response(self, message: str, username: str = "Phoenix") -> Iterable[dict]:
         """Generate a structured response using Gemini API with character personality.
@@ -113,8 +108,22 @@ class PrettyGeminiBot(BareGeminiBot):
             # Format the message with XML tags to separate username and message
             formatted_message = f"<username>{username}</username>\n<user_message>{message}</user_message>"
 
+            # Get the recent N rounds of history based on history_length
+            # Each round consists of a user message and an assistant response
+            max_history_messages = self.history_length * MESSAGES_PER_ROUND
+            recent_history = self.conversation_history[-max_history_messages:]
+
+            # Create a new chat session with the recent history
+            chat = self.client.chats.create(
+                model=self.model,
+                config=types.GenerateContentConfig(
+                    thinking_config=types.ThinkingConfig(thinking_level=self.thinking_level),
+                ),
+                history=recent_history,
+            )
+
             # Send message to chat with system_instruction and response_schema in config
-            response = self.chat.send_message(
+            response = chat.send_message(
                 formatted_message,
                 config=types.GenerateContentConfig(
                     system_instruction=SYSTEM_INSTRUCTION,
@@ -135,6 +144,22 @@ class PrettyGeminiBot(BareGeminiBot):
 
             # Format the content with character information
             content = self._format_message(ema_message)
+
+            # Add user message and assistant response to conversation history
+            # Get the full history from the chat session to capture all message parts
+            updated_history = chat.get_history()
+            # Since we created the chat with existing history and then sent one new message,
+            # the new messages are at the end. We need to get only the new user message and response.
+            history_before_length = len(recent_history)
+            # Validate that we have both user and assistant messages before appending
+            if len(updated_history) >= history_before_length + MESSAGES_PER_ROUND:
+                # Extract the new user message and assistant response
+                new_user_message = updated_history[history_before_length]
+                new_assistant_message = updated_history[history_before_length + 1]
+                # Verify both messages exist and are valid (not None)
+                if new_user_message is not None and new_assistant_message is not None:
+                    self.conversation_history.append(new_user_message)
+                    self.conversation_history.append(new_assistant_message)
 
             # Yield the response with metadata
             yield {
