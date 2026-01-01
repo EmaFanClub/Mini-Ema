@@ -114,7 +114,7 @@ class PrettyGeminiBot(BareGeminiBot):
             # Get the recent N rounds of history based on history_length
             # Each round consists of a user message and an assistant response
             max_history_messages = self.history_length * MESSAGES_PER_ROUND
-            recent_history = self.conversation_history[-max_history_messages:] if self.conversation_history else []
+            recent_history = self.conversation_history[-max_history_messages:]
 
             # Create a new chat session with the recent history
             chat = self.client.chats.create(
@@ -159,8 +159,8 @@ class PrettyGeminiBot(BareGeminiBot):
                 # Extract the new user message and assistant response
                 new_user_message = updated_history[history_before_length]
                 new_assistant_message = updated_history[history_before_length + 1]
-                # Verify both messages exist and are valid
-                if new_user_message and new_assistant_message:
+                # Verify both messages exist and are valid (not None)
+                if new_user_message is not None and new_assistant_message is not None:
                     self.conversation_history.append(new_user_message)
                     self.conversation_history.append(new_assistant_message)
 
