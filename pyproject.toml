@@ -9,6 +9,7 @@ dependencies = [
     "google-genai>=1.0.0",
     "python-dotenv>=1.0.0",
     "httpx[socks]>=0.28.1",
+    "pytest>=8.0.0",
 ]
 
 [build-system]
